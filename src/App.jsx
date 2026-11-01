@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { PlayerProvider, usePlayer } from './context/PlayerContext';
 import { HiddenPlayer } from './components/HiddenPlayer';
 import { Header } from './components/Header';
-import { FeaturedCard } from './components/FeaturedCard';
 import { RecentlyPlayed } from './components/RecentlyPlayed';
 import { NowPlaying } from './components/NowPlaying';
+import { MiniPlayer } from './components/MiniPlayer';
 import { Navigation } from './components/Navigation';
 import { SearchView } from './components/SearchView';
 import { LibraryView } from './components/LibraryView';
@@ -17,7 +17,6 @@ function MainApp() {
   const { isNowPlayingOpen, closeNowPlaying } = usePlayer();
 
   useEffect(() => {
-    // Register service worker if supported
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch((err) => {
         console.warn('SW register notice', err);
@@ -34,11 +33,10 @@ function MainApp() {
         <HiddenPlayer />
 
         {/* Content Views */}
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-20 pt-safe">
+        <main className="flex-1 overflow-y-auto no-scrollbar pb-32 pt-safe">
           {activeTab === 'home' && (
             <>
               <Header onOpenSleepTimer={() => setIsSleepTimerOpen(true)} />
-              <FeaturedCard />
               <RecentlyPlayed onOpenAll={() => setActiveTab('library')} />
             </>
           )}
@@ -46,6 +44,9 @@ function MainApp() {
           {activeTab === 'search' && <SearchView />}
           {activeTab === 'library' && <LibraryView />}
         </main>
+
+        {/* Floating Mini Player (Expands to Now Playing on click) */}
+        <MiniPlayer />
 
         {/* Floating Bottom Dock Navigation (Home, Search, Library) */}
         <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />

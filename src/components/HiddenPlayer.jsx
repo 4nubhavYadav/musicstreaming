@@ -10,7 +10,7 @@ export const HiddenPlayer = () => {
     setDuration,
     setIsPlaying,
     setIsBuffering,
-    nextTrack,
+    handleTrackEnded,
     isSeekingRef,
     pendingTrackRef
   } = usePlayer();
@@ -47,7 +47,6 @@ export const HiddenPlayer = () => {
               isReadyRef.current = true;
               setPlayerInstance(event.target);
 
-              // If a track was queued or user clicked play before ready
               if (pendingTrackRef?.current) {
                 const vid = pendingTrackRef.current.idYoutube || pendingTrackRef.current.id;
                 event.target.loadVideoById({ videoId: vid, startSeconds: 0 });
@@ -70,15 +69,14 @@ export const HiddenPlayer = () => {
               } else if (event.data === window.YT.PlayerState.ENDED) {
                 setIsPlaying(false);
                 setIsBuffering(false);
-                nextTrack();
+                handleTrackEnded(); // Handles loop 1 or advances to next
               }
             },
             onError: (err) => {
               console.warn('YouTube Player Event Notice:', err);
               setIsBuffering(false);
-              // Video restricted or cannot embed, gracefully advance
               setTimeout(() => {
-                nextTrack();
+                handleTrackEnded();
               }, 1200);
             }
           }
@@ -92,7 +90,6 @@ export const HiddenPlayer = () => {
       initYT();
     } else {
       window.onYouTubeIframeAPIReady = initYT;
-      // Also ensure API script is in document
       if (!document.getElementById('yt-iframe-api-tag')) {
         const tag = document.createElement('script');
         tag.id = 'yt-iframe-api-tag';

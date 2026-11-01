@@ -30,6 +30,7 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
     toggleShuffle,
     repeatMode,
     cycleRepeat,
+    loopToast,
     toggleLike,
     isLiked,
     sleepTimerSecondsLeft,
@@ -67,6 +68,13 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
   return (
     <div className="fixed inset-0 z-50 bg-parchment-100 flex flex-col justify-between pt-safe pb-safe px-7 max-w-md mx-auto animate-in slide-in-from-bottom duration-300">
       
+      {/* Toast for Loop status */}
+      {loopToast && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-sage-800 text-parchment-50 px-4 py-1.5 rounded-full text-xs font-sans font-medium shadow-zen animate-in fade-in zoom-in duration-150">
+          {loopToast}
+        </div>
+      )}
+
       {/* Top Bar: Progress Line, Collapse & Options */}
       <div>
         <div className="w-full bg-parchment-300/80 h-1 rounded-full overflow-hidden mt-2 mb-4">
@@ -204,8 +212,9 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
           </button>
         </div>
 
-        {/* Secondary Row: Shuffle, Sleep indicator, Heart, Repeat */}
+        {/* Secondary Row: Shuffle, Sleep indicator, Heart, Loop */}
         <div className="flex items-center justify-between px-6 text-sage-800">
+          {/* Shuffle Toggle */}
           <button
             onClick={toggleShuffle}
             className={`p-2 transition-all active:scale-90 relative ${
@@ -215,10 +224,11 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
           >
             <Shuffle className="w-5 h-5" />
             {isShuffle && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sage-700" />
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-sage-700" />
             )}
           </button>
 
+          {/* Sleep Timer Shortcut */}
           <button
             onClick={onOpenSleepTimer}
             className={`p-2 transition-all active:scale-90 flex items-center gap-1 ${
@@ -236,6 +246,7 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             )}
           </button>
 
+          {/* Like Heart */}
           <button
             onClick={() => toggleLike(currentTrack?.id)}
             className="p-2 transition-all active:scale-90 text-charcoal-400 hover:text-sage-800"
@@ -250,22 +261,23 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             />
           </button>
 
+          {/* Working Loop / Repeat Toggle Button */}
           <button
             onClick={cycleRepeat}
             className={`p-2 transition-all active:scale-90 relative ${
               repeatMode !== 'off'
-                ? 'text-sage-900 font-bold'
+                ? 'text-sage-800 font-bold bg-sage-100/70 rounded-full'
                 : 'text-charcoal-400 hover:text-sage-800'
             }`}
-            aria-label="Repeat mode"
+            aria-label={`Loop mode: ${repeatMode}`}
           >
             {repeatMode === 'one' ? (
-              <Repeat1 className="w-5 h-5" />
+              <Repeat1 className="w-5 h-5 text-sage-800" />
             ) : (
-              <Repeat className="w-5 h-5" />
+              <Repeat className={`w-5 h-5 ${repeatMode === 'all' ? 'text-sage-800' : ''}`} />
             )}
             {repeatMode !== 'off' && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sage-700" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-sage-700" />
             )}
           </button>
         </div>

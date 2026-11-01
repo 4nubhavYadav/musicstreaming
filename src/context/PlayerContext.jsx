@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { FEATURED_ALBUM, RECENTLY_PLAYED } from '../data/catalog';
+import { FEATURED_ALBUM, RECENTLY_PLAYED, ZEN_COLLECTIONS } from '../data/catalog';
 
 const PlayerContext = createContext(null);
 
 export const PlayerProvider = ({ children }) => {
-  const initialTrack = FEATURED_ALBUM.tracks[0];
+  const initialTrack = RECENTLY_PLAYED[0];
   const initialQueue = [
+    ...RECENTLY_PLAYED,
     ...FEATURED_ALBUM.tracks,
-    ...RECENTLY_PLAYED
+    ...ZEN_COLLECTIONS
   ];
 
   const [currentTrack, setCurrentTrack] = useState(initialTrack);
@@ -16,10 +17,23 @@ export const PlayerProvider = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(316);
+  const [duration, setDuration] = useState(197); // 3:17
   const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState('all');
+  const [repeatMode, setRepeatMode] = useState('all'); // 'all' | 'one' | 'off'
+  const [loopToast, setLoopToast] = useState(null);
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState(false);
+
+  // Dynamic Recently Played storage
+  const [recentlyPlayed, setRecentlyPlayed] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sora_recently_played_list');
+      return saved ? JSON.parse(saved) : RECENTLY_PLAYED;
+    } catch {
+      return RECENTLY_PLAYED;
+    }
+  });
+
+  // Liked tracks storage
   const [likedTrackIds, setLikedTrackIds] = useState(() => {
     try {
       const saved = localStorage.getItem('sora_liked_tracks');
@@ -36,12 +50,21 @@ export const PlayerProvider = ({ children }) => {
   const isSeekingRef = useRef(false);
   const pendingTrackRef = useRef(null);
 
-  // Liked tracks save
+  // Persist Recently Played
+  useEffect(() => {
+    try {
+      localStorage.setItem('sora_recently_played_list', JSON.stringify(recentlyPlayed));
+    } catch (e) {
+      console.warn('Could not persist recent tracks', e);
+    }
+  }, [recentlyPlayed]);
+
+  // Persist Liked tracks
   useEffect(() => {
     try {
       localStorage.setItem('sora_liked_tracks', JSON.stringify(likedTrackIds));
     } catch (e) {
-      console.warn('Liked tracks persistence error', e);
+      console.warn('Could not persist liked tracks', e);
     }
   }, [likedTrackIds]);
 
@@ -56,21 +79,25 @@ export const PlayerProvider = ({ children }) => {
     }
 
     const timer = setInterval(() => {
-      setSleepTimerSecondsLeft(prev => (prev > 0 ? prev - 1 : 0));
+      setSleepTimerSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => clearInterval(timer);
   }, [sleepTimerSecondsLeft]);
 
-  // MediaSession API
+  // MediaSession API integration
   useEffect(() => {
     if ('mediaSession' in navigator && currentTrack) {
       navigator.mediaSession.metadata = new window.MediaMetadata({
         title: currentTrack.title,
         artist: currentTrack.artist,
-        album: currentTrack.album || 'Sora Zen Music',
+        album: currentTrack.album || 'Sora Zen Audio',
         artwork: [
-          { src: currentTrack.artwork, sizes: '512x512', type: 'image/jpeg' }
+          {
+            src: currentTrack.artwork || `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg`,
+            sizes: '512x512',
+            type: 'image/jpeg'
+          }
         ]
       });
 
@@ -98,23 +125,37 @@ export const PlayerProvider = ({ children }) => {
 
   const playTrack = (track = null, newQueue = null) => {
     const targetTrack = track || currentTrack;
-    
+    if (!targetTrack) return;
+
+    // Update Recently Played list
+    setRecentlyPlayed((prev) => {
+      const filtered = prev.filter(
+        (t) => (t.id || t.idYoutube) !== (targetTrack.id || targetTrack.idYoutube)
+      );
+      return [targetTrack, ...filtered].slice(0, 20);
+    });
+
     if (newQueue) {
       setQueue(newQueue);
-      const idx = newQueue.findIndex(t => (t.id || t.idYoutube) === (targetTrack.id || targetTrack.idYoutube));
+      const idx = newQueue.findIndex(
+        (t) => (t.id || t.idYoutube) === (targetTrack.id || targetTrack.idYoutube)
+      );
       setQueueIndex(idx !== -1 ? idx : 0);
     } else if (track) {
-      const idx = queue.findIndex(t => (t.id || t.idYoutube) === (track.id || track.idYoutube));
+      const idx = queue.findIndex(
+        (t) => (t.id || t.idYoutube) === (track.id || track.idYoutube)
+      );
       if (idx !== -1) {
         setQueueIndex(idx);
       } else {
-        setQueue(prev => [track, ...prev]);
+        setQueue((prev) => [track, ...prev]);
         setQueueIndex(0);
       }
     }
 
     const videoId = targetTrack.idYoutube || targetTrack.id;
-    const isDifferentTrack = !currentTrack || (currentTrack.id || currentTrack.idYoutube) !== videoId;
+    const isDifferentTrack =
+      !currentTrack || (currentTrack.id || currentTrack.idYoutube) !== videoId;
 
     if (isDifferentTrack) {
       setCurrentTrack(targetTrack);
@@ -128,10 +169,15 @@ export const PlayerProvider = ({ children }) => {
             videoId: videoId,
             startSeconds: 0
           });
+        } else {
+          // If repeating the same track, seek to 0 and play
+          if (currentTime >= (duration - 2)) {
+            ytPlayerRef.current.seekTo(0, true);
+          }
         }
         ytPlayerRef.current.playVideo();
       } catch (err) {
-        console.warn('playVideo call failed', err);
+        console.warn('playVideo failed', err);
       }
     } else {
       pendingTrackRef.current = targetTrack;
@@ -146,7 +192,7 @@ export const PlayerProvider = ({ children }) => {
       try {
         ytPlayerRef.current.pauseVideo();
       } catch (err) {
-        console.warn('pauseVideo call failed', err);
+        console.warn('pauseVideo failed', err);
       }
     }
     setIsPlaying(false);
@@ -160,13 +206,32 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
+  // Called when video ends in YouTube player
+  const handleTrackEnded = () => {
+    if (repeatMode === 'one') {
+      // Loop this exact track
+      if (ytPlayerRef.current && ytPlayerRef.current.seekTo) {
+        ytPlayerRef.current.seekTo(0, true);
+        ytPlayerRef.current.playVideo();
+        setIsPlaying(true);
+        setCurrentTime(0);
+        return;
+      }
+    }
+    nextTrack();
+  };
+
   const nextTrack = () => {
     if (queue.length === 0) return;
 
     if (repeatMode === 'one') {
-      seek(0);
-      playTrack(currentTrack);
-      return;
+      if (ytPlayerRef.current && ytPlayerRef.current.seekTo) {
+        ytPlayerRef.current.seekTo(0, true);
+        ytPlayerRef.current.playVideo();
+        setIsPlaying(true);
+        setCurrentTime(0);
+        return;
+      }
     }
 
     let nextIndex;
@@ -221,21 +286,33 @@ export const PlayerProvider = ({ children }) => {
   };
 
   const toggleShuffle = () => {
-    setIsShuffle(prev => !prev);
+    setIsShuffle((prev) => !prev);
   };
 
   const cycleRepeat = () => {
-    setRepeatMode(prev => {
-      if (prev === 'all') return 'one';
-      if (prev === 'one') return 'off';
-      return 'all';
+    setRepeatMode((prev) => {
+      let nextMode;
+      let msg;
+      if (prev === 'all') {
+        nextMode = 'one';
+        msg = 'Loop Track (1)';
+      } else if (prev === 'one') {
+        nextMode = 'off';
+        msg = 'Loop Off';
+      } else {
+        nextMode = 'all';
+        msg = 'Loop All';
+      }
+      setLoopToast(msg);
+      setTimeout(() => setLoopToast(null), 2000);
+      return nextMode;
     });
   };
 
   const toggleLike = (trackId) => {
-    setLikedTrackIds(prev => {
+    setLikedTrackIds((prev) => {
       if (prev.includes(trackId)) {
-        return prev.filter(id => id !== trackId);
+        return prev.filter((id) => id !== trackId);
       } else {
         return [...prev, trackId];
       }
@@ -266,7 +343,9 @@ export const PlayerProvider = ({ children }) => {
         queueIndex,
         isShuffle,
         repeatMode,
+        loopToast,
         isNowPlayingOpen,
+        recentlyPlayed,
         likedTrackIds,
         sleepTimerMinutes,
         sleepTimerSecondsLeft,
@@ -280,6 +359,7 @@ export const PlayerProvider = ({ children }) => {
         playTrack,
         pauseTrack,
         togglePlayPause,
+        handleTrackEnded,
         nextTrack,
         prevTrack,
         seek,
