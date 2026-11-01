@@ -16,9 +16,9 @@ export const PlayerProvider = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(316); // Default 5:16
+  const [duration, setDuration] = useState(316);
   const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState('all'); // 'off' | 'all' | 'one'
+  const [repeatMode, setRepeatMode] = useState('all');
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState(false);
   const [likedTrackIds, setLikedTrackIds] = useState(() => {
     try {
@@ -29,24 +29,23 @@ export const PlayerProvider = ({ children }) => {
     }
   });
 
-  // Sleep timer state
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState(null);
   const [sleepTimerSecondsLeft, setSleepTimerSecondsLeft] = useState(null);
 
-  // Hidden YT Player reference
   const ytPlayerRef = useRef(null);
   const isSeekingRef = useRef(false);
+  const pendingTrackRef = useRef(null);
 
-  // Save liked tracks
+  // Liked tracks save
   useEffect(() => {
     try {
       localStorage.setItem('sora_liked_tracks', JSON.stringify(likedTrackIds));
     } catch (e) {
-      console.warn('Could not persist liked tracks', e);
+      console.warn('Liked tracks persistence error', e);
     }
   }, [likedTrackIds]);
 
-  // Handle sleep timer countdown
+  // Sleep timer countdown
   useEffect(() => {
     if (sleepTimerSecondsLeft === null) return;
     if (sleepTimerSecondsLeft <= 0) {
@@ -56,14 +55,14 @@ export const PlayerProvider = ({ children }) => {
       return;
     }
 
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setSleepTimerSecondsLeft(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [sleepTimerSecondsLeft]);
 
-  // Synchronize MediaSession
+  // MediaSession API
   useEffect(() => {
     if ('mediaSession' in navigator && currentTrack) {
       navigator.mediaSession.metadata = new window.MediaMetadata({
@@ -71,7 +70,7 @@ export const PlayerProvider = ({ children }) => {
         artist: currentTrack.artist,
         album: currentTrack.album || 'Sora Zen Music',
         artwork: [
-          { src: currentTrack.artwork, sizes: '512x512', type: 'image/svg+xml' }
+          { src: currentTrack.artwork, sizes: '512x512', type: 'image/jpeg' }
         ]
       });
 
@@ -87,7 +86,6 @@ export const PlayerProvider = ({ children }) => {
     }
   }, [currentTrack]);
 
-  // Update MediaSession state
   useEffect(() => {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
@@ -99,12 +97,12 @@ export const PlayerProvider = ({ children }) => {
   };
 
   const playTrack = (track = null, newQueue = null) => {
+    const targetTrack = track || currentTrack;
+    
     if (newQueue) {
       setQueue(newQueue);
-      if (track) {
-        const idx = newQueue.findIndex(t => (t.id || t.idYoutube) === (track.id || track.idYoutube));
-        setQueueIndex(idx !== -1 ? idx : 0);
-      }
+      const idx = newQueue.findIndex(t => (t.id || t.idYoutube) === (targetTrack.id || targetTrack.idYoutube));
+      setQueueIndex(idx !== -1 ? idx : 0);
     } else if (track) {
       const idx = queue.findIndex(t => (t.id || t.idYoutube) === (track.id || track.idYoutube));
       if (idx !== -1) {
@@ -115,23 +113,41 @@ export const PlayerProvider = ({ children }) => {
       }
     }
 
-    const targetTrack = track || currentTrack;
-    if (track && (track.id || track.idYoutube) !== (currentTrack.id || currentTrack.idYoutube)) {
+    const videoId = targetTrack.idYoutube || targetTrack.id;
+    const isDifferentTrack = !currentTrack || (currentTrack.id || currentTrack.idYoutube) !== videoId;
+
+    if (isDifferentTrack) {
       setCurrentTrack(targetTrack);
       setCurrentTime(0);
-      const ytId = targetTrack.idYoutube || targetTrack.id;
-      if (ytPlayerRef.current && ytPlayerRef.current.loadVideoById) {
-        ytPlayerRef.current.loadVideoById(ytId);
-      }
-    } else if (ytPlayerRef.current && ytPlayerRef.current.playVideo) {
-      ytPlayerRef.current.playVideo();
     }
+
+    if (ytPlayerRef.current && ytPlayerRef.current.loadVideoById) {
+      try {
+        if (isDifferentTrack) {
+          ytPlayerRef.current.loadVideoById({
+            videoId: videoId,
+            startSeconds: 0
+          });
+        }
+        ytPlayerRef.current.playVideo();
+      } catch (err) {
+        console.warn('playVideo call failed', err);
+      }
+    } else {
+      pendingTrackRef.current = targetTrack;
+    }
+
     setIsPlaying(true);
+    setIsBuffering(true);
   };
 
   const pauseTrack = () => {
     if (ytPlayerRef.current && ytPlayerRef.current.pauseVideo) {
-      ytPlayerRef.current.pauseVideo();
+      try {
+        ytPlayerRef.current.pauseVideo();
+      } catch (err) {
+        console.warn('pauseVideo call failed', err);
+      }
     }
     setIsPlaying(false);
   };
@@ -140,13 +156,13 @@ export const PlayerProvider = ({ children }) => {
     if (isPlaying) {
       pauseTrack();
     } else {
-      playTrack();
+      playTrack(currentTrack);
     }
   };
 
   const nextTrack = () => {
     if (queue.length === 0) return;
-    
+
     if (repeatMode === 'one') {
       seek(0);
       playTrack(currentTrack);
@@ -196,7 +212,11 @@ export const PlayerProvider = ({ children }) => {
   const seek = (timeInSeconds) => {
     setCurrentTime(timeInSeconds);
     if (ytPlayerRef.current && ytPlayerRef.current.seekTo) {
-      ytPlayerRef.current.seekTo(timeInSeconds, true);
+      try {
+        ytPlayerRef.current.seekTo(timeInSeconds, true);
+      } catch (e) {
+        console.warn('seek error', e);
+      }
     }
   };
 
@@ -251,6 +271,7 @@ export const PlayerProvider = ({ children }) => {
         sleepTimerMinutes,
         sleepTimerSecondsLeft,
         isSeekingRef,
+        pendingTrackRef,
         setPlayerInstance,
         setCurrentTime,
         setDuration,

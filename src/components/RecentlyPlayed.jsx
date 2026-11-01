@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Play, Pause, MoreHorizontal, ChevronRight, Heart, Share2, PlusCircle } from 'lucide-react';
+import { Play, Pause, MoreHorizontal, ChevronRight, Heart, Share2, Loader2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
-import { RECENTLY_PLAYED, ZEN_COLLECTIONS } from '../data/catalog';
+import { RECENTLY_PLAYED } from '../data/catalog';
 
 export const RecentlyPlayed = ({ onOpenAll }) => {
-  const { currentTrack, isPlaying, playTrack, togglePlayPause, toggleLike, isLiked } = usePlayer();
+  const { currentTrack, isPlaying, isBuffering, playTrack, togglePlayPause, toggleLike, isLiked } = usePlayer();
   const [activeMenuTrackId, setActiveMenuTrackId] = useState(null);
 
   const handleTrackClick = (track) => {
@@ -41,6 +41,7 @@ export const RecentlyPlayed = ({ onOpenAll }) => {
         {RECENTLY_PLAYED.map((track) => {
           const isThisPlaying =
             (currentTrack?.id || currentTrack?.idYoutube) === (track.id || track.idYoutube);
+          const posterUrl = track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
 
           return (
             <div
@@ -48,13 +49,16 @@ export const RecentlyPlayed = ({ onOpenAll }) => {
               onClick={() => handleTrackClick(track)}
               className="flex items-center justify-between p-2 rounded-2xl hover:bg-parchment-200/50 active:bg-parchment-200/80 transition-all cursor-pointer group relative"
             >
-              {/* Artwork + Title + Artist */}
+              {/* Music Poster Thumbnail + Title + Artist */}
               <div className="flex items-center gap-3.5 min-w-0 pr-3">
-                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-parchment-200 shadow-sm border border-black/5">
+                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 shadow-sm border border-black/5">
                   <img
-                    src={track.artwork}
+                    src={posterUrl}
                     alt={track.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.target.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
+                    }}
                   />
                 </div>
 
@@ -124,7 +128,9 @@ export const RecentlyPlayed = ({ onOpenAll }) => {
                   }`}
                   aria-label={isThisPlaying && isPlaying ? 'Pause' : 'Play'}
                 >
-                  {isThisPlaying && isPlaying ? (
+                  {isThisPlaying && isBuffering ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : isThisPlaying && isPlaying ? (
                     <Pause className="w-3.5 h-3.5 fill-current" />
                   ) : (
                     <Play className="w-3.5 h-3.5 fill-current ml-0.5" />

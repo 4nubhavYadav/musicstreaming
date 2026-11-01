@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Play, Sparkles, Clock, Music2 } from 'lucide-react';
+import { Heart, Play, Music2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { FEATURED_ALBUM, RECENTLY_PLAYED, ZEN_COLLECTIONS } from '../data/catalog';
 
@@ -21,17 +21,17 @@ export const LibraryView = () => {
   };
 
   return (
-    <div className="px-6 pt-6 pb-28 animate-in fade-in duration-200">
+    <div className="px-6 pt-7 pb-28 animate-in fade-in duration-200">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="font-serif text-2xl font-semibold text-charcoal-900">
-          Your Library
+        <h2 className="font-serif text-2xl font-semibold text-charcoal-900 tracking-tight">
+          Library
         </h2>
         <span className="text-xs font-sans text-sage-800 bg-sage-100 px-2.5 py-1 rounded-full font-medium">
           {favoriteTracks.length} saved
         </span>
       </div>
       <p className="text-xs font-sans text-charcoal-600 mb-6">
-        A sanctuary of your favorite sounds and quiet moments.
+        Your saved tracks and ambient collections.
       </p>
 
       {/* Liked Songs Hero Card */}
@@ -54,14 +54,14 @@ export const LibraryView = () => {
           Liked Tracks
         </h3>
         <p className="text-xs font-sans text-parchment-200/80">
-          {favoriteTracks.length} tracks · Infinite serenity
+          {favoriteTracks.length} tracks
         </p>
       </div>
 
-      {/* Favorites List */}
+      {/* Favorites List with Real Music Posters */}
       <div className="mb-8">
         <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-3 block">
-          Saved Music
+          Favorites
         </span>
 
         {favoriteTracks.length === 0 ? (
@@ -80,8 +80,15 @@ export const LibraryView = () => {
                 className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200 border border-sage-100/60 cursor-pointer active:scale-98 transition-all group"
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-parchment-200">
-                    <img src={track.artwork} alt={track.title} className="w-full h-full object-cover" />
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 shadow-sm border border-black/5">
+                    <img 
+                      src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`} 
+                      alt={track.title} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
+                      }}
+                    />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-xs font-medium text-charcoal-900 truncate">
@@ -105,19 +112,23 @@ export const LibraryView = () => {
         )}
       </div>
 
-      {/* Ambient Playlists */}
+      {/* Curated Soundscapes with Real Posters */}
       <div>
         <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-3 block">
-          Curated Soundscapes
+          Featured Collections
         </span>
 
         <div className="grid grid-cols-2 gap-3">
           <div 
             onClick={() => playTrack(FEATURED_ALBUM.tracks[0], FEATURED_ALBUM.tracks)}
-            className="p-3 bg-parchment-50 border border-sage-100 rounded-2xl cursor-pointer hover:bg-parchment-200 transition-all"
+            className="p-3 bg-parchment-50 border border-sage-100 rounded-2xl cursor-pointer hover:bg-parchment-200 transition-all group"
           >
-            <div className="w-full aspect-square rounded-xl overflow-hidden mb-2">
-              <img src={FEATURED_ALBUM.artwork} alt="Golden Horizons" className="w-full h-full object-cover" />
+            <div className="w-full aspect-square rounded-xl overflow-hidden mb-2 bg-charcoal-800 shadow-sm">
+              <img 
+                src={FEATURED_ALBUM.artwork} 
+                alt="Golden Horizons" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              />
             </div>
             <h4 className="text-xs font-medium text-charcoal-900 truncate">Golden Horizons</h4>
             <p className="text-[10px] text-charcoal-600 truncate">Tycho Discography</p>
@@ -125,13 +136,17 @@ export const LibraryView = () => {
 
           <div 
             onClick={() => playTrack(ZEN_COLLECTIONS[0], ZEN_COLLECTIONS)}
-            className="p-3 bg-parchment-50 border border-sage-100 rounded-2xl cursor-pointer hover:bg-parchment-200 transition-all"
+            className="p-3 bg-parchment-50 border border-sage-100 rounded-2xl cursor-pointer hover:bg-parchment-200 transition-all group"
           >
-            <div className="w-full aspect-square rounded-xl overflow-hidden mb-2">
-              <img src={ZEN_COLLECTIONS[0].artwork} alt="Weightless Drift" className="w-full h-full object-cover" />
+            <div className="w-full aspect-square rounded-xl overflow-hidden mb-2 bg-charcoal-800 shadow-sm">
+              <img 
+                src={ZEN_COLLECTIONS[0].artwork} 
+                alt="Nuvole Bianche" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              />
             </div>
-            <h4 className="text-xs font-medium text-charcoal-900 truncate">Deep Drift</h4>
-            <p className="text-[10px] text-charcoal-600 truncate">Brian Eno & Marconi Union</p>
+            <h4 className="text-xs font-medium text-charcoal-900 truncate">Piano Calm</h4>
+            <p className="text-[10px] text-charcoal-600 truncate">Ludovico Einaudi</p>
           </div>
         </div>
       </div>

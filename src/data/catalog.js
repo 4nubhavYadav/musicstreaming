@@ -1,100 +1,105 @@
-import { ARTWORKS } from './artworks';
-
 export const FEATURED_ALBUM = {
   id: 'featured-golden-horizons',
   title: 'Golden Horizons',
   artist: 'Tycho',
   description: 'Warm, expansive instrumentals for quiet mornings and open roads.',
-  artwork: ARTWORKS.aWalk,
+  artwork: 'https://i.ytimg.com/vi/mehLx_Fjv_c/hqdefault.jpg',
   tracks: [
     {
-      id: 'SDNA934EEVk',
+      id: 'mehLx_Fjv_c',
+      idYoutube: 'mehLx_Fjv_c',
       title: 'A Walk',
       artist: 'Tycho',
-      album: 'Golden Horizons',
+      album: 'Dive',
       duration: '5:16',
-      artwork: ARTWORKS.aWalk
+      artwork: 'https://i.ytimg.com/vi/mehLx_Fjv_c/hqdefault.jpg'
     },
     {
-      id: 'yMy14Zs0u28',
+      id: '6XJBDX3Z0BY',
+      idYoutube: '6XJBDX3Z0BY',
       title: 'Awake',
       artist: 'Tycho',
-      album: 'Golden Horizons',
+      album: 'Awake',
       duration: '4:43',
-      artwork: ARTWORKS.aWalk
+      artwork: 'https://i.ytimg.com/vi/6XJBDX3Z0BY/hqdefault.jpg'
     },
     {
-      id: 'IuGO6WHcruU',
-      title: 'Hours',
+      id: 'VCR3g5HrkYc',
+      idYoutube: 'VCR3g5HrkYc',
+      title: 'Horizon',
       artist: 'Tycho',
-      album: 'Golden Horizons',
-      duration: '5:44',
-      artwork: ARTWORKS.aWalk
+      album: 'Epoch',
+      duration: '3:59',
+      artwork: 'https://i.ytimg.com/vi/VCR3g5HrkYc/hqdefault.jpg'
     }
   ]
 };
 
 export const RECENTLY_PLAYED = [
   {
-    id: '0iWqT2iE4f8',
-    title: 'Small Moments',
-    artist: 'Leif Vollebekk',
-    album: 'Twin Solitude',
-    duration: '3:45',
-    artwork: ARTWORKS.smallMoments
+    id: 'OmKAn8rNbKg',
+    idYoutube: 'OmKAn8rNbKg',
+    title: 'Anchor',
+    artist: 'Novo Amor',
+    album: 'Woodgate, NY',
+    duration: '3:17',
+    artwork: 'https://i.ytimg.com/vi/OmKAn8rNbKg/hqdefault.jpg'
   },
   {
     id: 'MACzQc6FlRM',
-    title: 'Fading West',
+    idYoutube: 'MACzQc6FlRM',
+    title: 'State Lines',
     artist: 'Novo Amor',
     album: 'Birthplace',
     duration: '3:32',
-    artwork: ARTWORKS.fadingWest
+    artwork: 'https://i.ytimg.com/vi/MACzQc6FlRM/hqdefault.jpg'
   },
   {
-    id: 'E9tnLMV7m3s',
-    title: 'Things We Don\'t Say',
+    id: 'mYIfiQLn-l4',
+    idYoutube: 'mYIfiQLn-l4',
+    title: 'Saman',
     artist: 'Ólafur Arnalds',
     album: 're:member',
-    duration: '3:18',
-    artwork: ARTWORKS.thingsWeDontSay
+    duration: '2:11',
+    artwork: 'https://i.ytimg.com/vi/mYIfiQLn-l4/hqdefault.jpg'
   },
   {
-    id: 'wTWLzI7mDps',
-    title: 'In Tandem',
+    id: '1L0T7fB0w8g',
+    idYoutube: '1L0T7fB0w8g',
+    title: 'Letter',
     artist: 'Yosi Horikawa',
     album: 'Vapor',
-    duration: '4:50',
-    artwork: ARTWORKS.inTandem
+    duration: '4:45',
+    artwork: 'https://i.ytimg.com/vi/1L0T7fB0w8g/hqdefault.jpg'
   }
 ];
 
 export const ZEN_COLLECTIONS = [
   {
-    id: 'deep-rest',
-    title: 'Weightless Drift',
-    artist: 'Marconi Union',
-    album: 'Ambient Transmissions',
-    idYoutube: 'UfcAVejslrU',
-    artwork: ARTWORKS.fadingWest,
-    duration: '8:05'
-  },
-  {
-    id: 'pianoworks',
+    id: '4VR-6AS0-l4',
+    idYoutube: '4VR-6AS0-l4',
     title: 'Nuvole Bianche',
     artist: 'Ludovico Einaudi',
     album: 'Una Mattina',
-    idYoutube: '4VR-6AS0-l4',
-    artwork: ARTWORKS.smallMoments,
+    artwork: 'https://i.ytimg.com/vi/4VR-6AS0-l4/hqdefault.jpg',
     duration: '5:57'
   },
   {
-    id: 'ascent',
+    id: 'hMXaE9Uuvb8',
+    idYoutube: 'hMXaE9Uuvb8',
     title: 'An Ending (Ascent)',
     artist: 'Brian Eno',
-    album: 'Apollo: Atmospheres',
-    idYoutube: 'hMXaE9Uuvb8',
-    artwork: ARTWORKS.thingsWeDontSay,
+    album: 'Apollo',
+    artwork: 'https://i.ytimg.com/vi/hMXaE9Uuvb8/hqdefault.jpg',
     duration: '4:24'
+  },
+  {
+    id: 'bnV5UvQ1hio',
+    idYoutube: 'bnV5UvQ1hio',
+    title: 'Near Light',
+    artist: 'Ólafur Arnalds',
+    album: 'Living Room Songs',
+    artwork: 'https://i.ytimg.com/vi/bnV5UvQ1hio/hqdefault.jpg',
+    duration: '3:28'
   }
 ];

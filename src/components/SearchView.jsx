@@ -1,228 +1,370 @@
-import React, { useState } from 'react';
-import { Search as SearchIcon, Play, Plus, Sparkles, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search as SearchIcon, Play, Key, Sparkles, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
-import { getZenArtwork } from '../data/artworks';
 import { ZEN_COLLECTIONS, RECENTLY_PLAYED, FEATURED_ALBUM } from '../data/catalog';
 
 export const SearchView = () => {
-  const { playTrack } = usePlayer();
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [query, setQuery] = useState('');
-  const [customUrl, setCustomUrl] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('sora_yt_api_key') || '';
+  });
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keySavedNotice, setKeySavedNotice] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   const moodPills = [
-    { label: 'Quiet Mornings', query: 'Tycho ambient instrumentals' },
-    { label: 'Deep Focus', query: 'Brian Eno Marconi Union ambient' },
-    { label: 'Modern Classical', query: 'Olafur Arnalds Ludovico Einaudi piano' },
-    { label: 'Nature & Stream', query: 'Forest stream birds ambient sound' },
-    { label: 'Lo-Fi Zen', query: 'ChilledCow lofi quiet beats' },
+    'Tycho',
+    'Novo Amor',
+    'Ólafur Arnalds',
+    'Ludovico Einaudi',
+    'Brian Eno',
+    'Bonobo',
+    'Marconi Union',
+    'Lofi Hip Hop'
   ];
 
-  const extractYoutubeId = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+  const handleSaveApiKey = (e) => {
+    e.preventDefault();
+    localStorage.setItem('sora_yt_api_key', apiKey.trim());
+    setKeySavedNotice(true);
+    setTimeout(() => setKeySavedNotice(false), 2500);
+    setShowKeyInput(false);
   };
 
-  const handleCustomUrlSubmit = (e) => {
-    e.preventDefault();
-    const id = extractYoutubeId(customUrl);
-    if (id) {
-      const customTrack = {
-        id: id,
-        idYoutube: id,
-        title: 'Custom YouTube Stream',
-        artist: 'Ambient Audio',
-        album: 'Direct Stream',
-        duration: 'Stream',
-        artwork: getZenArtwork('Custom', 'Audio')
-      };
-      playTrack(customTrack);
-      setCustomUrl('');
-    } else {
-      alert('Please enter a valid YouTube video link or ID (e.g. https://youtu.be/...)');
-    }
+  const extractYoutubeId = (text) => {
+    if (!text) return null;
+    const clean = text.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
+    const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? match[1] : null;
   };
 
-  const handleSearchSubmit = async (e) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const decodeHtml = (html) => {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
+  };
 
-    // Check if user pasted a YouTube URL in search bar
-    const potentialId = extractYoutubeId(query);
-    if (potentialId) {
-      const customTrack = {
-        id: potentialId,
-        idYoutube: potentialId,
-        title: 'YouTube Stream',
-        artist: query.slice(0, 24),
-        album: 'Web Stream',
-        duration: 'Audio',
-        artwork: getZenArtwork(query, 'Stream')
-      };
-      playTrack(customTrack);
-      setQuery('');
-      return;
-    }
+  const executeSearch = async (searchTerm) => {
+    const q = searchTerm || query;
+    if (!q.trim()) return;
 
-    setIsSearching(true);
+    setSearchError(null);
+    setIsLoading(true);
 
-    try {
-      // Use public invidious/piped instance for free video search without API key quotas
-      const res = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music_songs`);
-      if (res.ok) {
+    // 1. Check if user pasted a YouTube URL or direct Video ID
+    const directId = extractYoutubeId(q);
+    if (directId) {
+      try {
+        const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${directId}`);
         const data = await res.json();
-        const items = (data.items || []).slice(0, 8).map(item => ({
-          id: item.url ? item.url.replace('/watch?v=', '') : item.id,
-          idYoutube: item.url ? item.url.replace('/watch?v=', '') : item.id,
-          title: item.title || query,
-          artist: item.uploaderName || 'Artist',
-          album: 'Search Discovery',
-          duration: item.duration ? `${Math.floor(item.duration / 60)}:${item.duration % 60 < 10 ? '0' : ''}${item.duration % 60}` : '3:30',
-          artwork: getZenArtwork(item.title, item.uploaderName)
-        }));
-        setSearchResults(items);
-      } else {
-        throw new Error('Fallback to catalog');
+        const directTrack = {
+          id: directId,
+          idYoutube: directId,
+          title: data.title || 'YouTube Audio',
+          artist: data.author_name || 'YouTube',
+          album: 'Direct Stream',
+          artwork: `https://i.ytimg.com/vi/${directId}/hqdefault.jpg`,
+          duration: 'Audio'
+        };
+        playTrack(directTrack);
+        setSearchResults([directTrack]);
+        setIsLoading(false);
+        return;
+      } catch {
+        const directTrack = {
+          id: directId,
+          idYoutube: directId,
+          title: 'YouTube Audio',
+          artist: 'Direct Stream',
+          album: 'YouTube',
+          artwork: `https://i.ytimg.com/vi/${directId}/hqdefault.jpg`,
+          duration: 'Audio'
+        };
+        playTrack(directTrack);
+        setSearchResults([directTrack]);
+        setIsLoading(false);
+        return;
       }
-    } catch {
-      // Fallback client filter
-      const allCatalog = [...FEATURED_ALBUM.tracks, ...RECENTLY_PLAYED, ...ZEN_COLLECTIONS];
-      const filtered = allCatalog.filter(
-        t => t.title.toLowerCase().includes(query.toLowerCase()) || 
-             t.artist.toLowerCase().includes(query.toLowerCase())
-      );
-      setSearchResults(filtered.length > 0 ? filtered : [
-        {
-          id: 'hMXaE9Uuvb8',
-          idYoutube: 'hMXaE9Uuvb8',
-          title: query,
-          artist: 'Zen Search Result',
-          album: 'Discovered',
-          duration: '4:15',
-          artwork: getZenArtwork(query, 'Zen')
-        }
-      ]);
-    } finally {
-      setIsSearching(false);
     }
+
+    // 2. If YouTube Data API Key is provided, use official Google YouTube Data API v3
+    if (apiKey.trim()) {
+      try {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(
+          q
+        )}&type=video&videoCategoryId=10&key=${encodeURIComponent(apiKey.trim())}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData?.error?.message || 'YouTube Data API error');
+        }
+        const data = await res.json();
+        const items = (data.items || []).map((item) => {
+          const vid = item.id.videoId;
+          return {
+            id: vid,
+            idYoutube: vid,
+            title: decodeHtml(item.snippet.title),
+            artist: decodeHtml(item.snippet.channelTitle),
+            album: 'YouTube Music',
+            artwork: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
+            duration: 'Track'
+          };
+        });
+        setSearchResults(items);
+        setIsLoading(false);
+        return;
+      } catch (err) {
+        console.warn('YouTube API call failed, falling back to free search:', err);
+        setSearchError(err.message);
+      }
+    }
+
+    // 3. Fallback: Free Invidious/Piped public mirrors
+    const mirrors = [
+      `https://yt.chocolatemoo53.com/api/v1/search?q=${encodeURIComponent(q)}&type=video`,
+      `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(q)}&type=video`
+    ];
+
+    let found = false;
+    for (const mirror of mirrors) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4500);
+        const res = await fetch(mirror, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          const items = (data || []).slice(0, 15).map((item) => {
+            const vid = item.videoId || item.id;
+            return {
+              id: vid,
+              idYoutube: vid,
+              title: item.title,
+              artist: item.author || 'Artist',
+              album: 'YouTube',
+              artwork: `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
+              duration: item.lengthSeconds
+                ? `${Math.floor(item.lengthSeconds / 60)}:${item.lengthSeconds % 60 < 10 ? '0' : ''}${item.lengthSeconds % 60}`
+                : '3:30'
+            };
+          });
+
+          if (items.length > 0) {
+            setSearchResults(items);
+            found = true;
+            break;
+          }
+        }
+      } catch (e) {
+        // try next mirror
+      }
+    }
+
+    // 4. If mirrors unavailable, search local catalog
+    if (!found) {
+      const all = [...FEATURED_ALBUM.tracks, ...RECENTLY_PLAYED, ...ZEN_COLLECTIONS];
+      const filtered = all.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q.toLowerCase()) ||
+          t.artist.toLowerCase().includes(q.toLowerCase())
+      );
+      setSearchResults(filtered);
+    }
+
+    setIsLoading(false);
   };
 
-  const selectMood = (mood) => {
-    setQuery(mood.query);
-    handleSearchSubmit({ preventDefault: () => {} });
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    executeSearch(query);
+  };
+
+  const handleMoodClick = (mood) => {
+    setQuery(mood);
+    executeSearch(mood);
   };
 
   return (
-    <div className="px-6 pt-6 pb-28 animate-in fade-in duration-200">
-      <h2 className="font-serif text-2xl font-semibold text-charcoal-900 mb-1">
-        Explore & Search
-      </h2>
-      <p className="text-xs font-sans text-charcoal-600 mb-5">
-        Search any track on YouTube or stream directly via link.
-      </p>
+    <div className="px-6 pt-7 pb-28 animate-in fade-in duration-200">
+      
+      {/* Top Header & API Key Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-serif text-2xl font-semibold text-charcoal-900 tracking-tight">
+            Search
+          </h2>
+          <p className="text-xs font-sans text-charcoal-600 mt-0.5">
+            Search any YouTube song or paste a video link.
+          </p>
+        </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearchSubmit} className="relative mb-4">
+        <button
+          onClick={() => setShowKeyInput((prev) => !prev)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-sans font-medium transition-all ${
+            apiKey.trim()
+              ? 'bg-sage-100 text-sage-800 border border-sage-200'
+              : 'bg-parchment-200 text-charcoal-600 border border-charcoal-200'
+          }`}
+          aria-label="YouTube API Settings"
+        >
+          <Key className="w-3.5 h-3.5" />
+          <span>{apiKey.trim() ? 'API Key Active' : 'Add API Key'}</span>
+        </button>
+      </div>
+
+      {/* YouTube API Key Input Drawer */}
+      {showKeyInput && (
+        <form onSubmit={handleSaveApiKey} className="mb-5 p-4 rounded-2xl bg-parchment-50 border border-sage-200 shadow-sm animate-in fade-in duration-150">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-charcoal-900">
+              YouTube Data API v3 Key
+            </span>
+            {keySavedNotice && (
+              <span className="text-[11px] text-sage-800 flex items-center gap-1 font-medium">
+                <Check className="w-3 h-3" /> Saved
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-charcoal-600 mb-3 leading-relaxed">
+            Enter your free Google Cloud YouTube Data API v3 key for unlimited official search results.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="AIzaSy..."
+              className="flex-1 bg-parchment-200/60 border border-sage-200 rounded-xl px-3 py-2 text-xs font-mono text-charcoal-900 focus:outline-none focus:border-sage-600"
+            />
+            <button
+              type="submit"
+              className="bg-sage-700 text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-sage-800 transition-colors"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Search Input Bar */}
+      <form onSubmit={handleFormSubmit} className="relative mb-5">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search artist, track or paste YouTube link..."
-          className="w-full bg-parchment-50 border border-sage-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-sage-600 focus:ring-1 focus:ring-sage-600 shadow-sm transition-all"
+          placeholder="Search artist, song, or paste YouTube URL..."
+          className="w-full bg-parchment-50 border border-sage-200/80 rounded-2xl py-3.5 pl-11 pr-10 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-sage-700 focus:ring-1 focus:ring-sage-700 shadow-sm transition-all"
         />
         <SearchIcon className="w-4 h-4 text-charcoal-400 absolute left-4 top-1/2 -translate-y-1/2" />
-        {query && (
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 text-sage-700 absolute right-4 top-1/2 -translate-y-1/2 animate-spin" />
+        ) : query ? (
           <button
             type="submit"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-sage-800 px-2 py-1 bg-sage-100 rounded-lg"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-sage-800 px-2.5 py-1 bg-sage-100 rounded-lg hover:bg-sage-200"
           >
-            Search
+            Go
           </button>
-        )}
+        ) : null}
       </form>
 
-      {/* Direct YouTube URL stream pill */}
-      <form onSubmit={handleCustomUrlSubmit} className="flex gap-2 mb-6">
-        <input
-          type="url"
-          value={customUrl}
-          onChange={(e) => setCustomUrl(e.target.value)}
-          placeholder="Or paste direct YouTube URL..."
-          className="flex-1 bg-parchment-50/70 border border-sage-100 rounded-xl py-2 px-3 text-[11px] font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-sage-600"
-        />
-        <button
-          type="submit"
-          className="bg-sage-700 text-white rounded-xl px-3 py-2 text-[11px] font-medium flex items-center gap-1 active:scale-95 transition-transform"
-        >
-          <Play className="w-3 h-3 fill-white" />
-          <span>Stream</span>
-        </button>
-      </form>
+      {/* Error notice */}
+      {searchError && (
+        <div className="mb-4 p-3 rounded-xl bg-terracotta-100/60 border border-terracotta-400/50 text-[11px] text-terracotta-600 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{searchError}</span>
+        </div>
+      )}
 
-      {/* Mood Tags */}
+      {/* Quick Mood Search Tags */}
       <div className="mb-6">
         <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-2.5 block">
-          Curated Zen Moods
+          Suggestions
         </span>
         <div className="flex flex-wrap gap-2">
           {moodPills.map((mood) => (
             <button
-              key={mood.label}
-              onClick={() => selectMood(mood)}
-              className="text-xs font-sans bg-parchment-200/70 hover:bg-parchment-300 text-charcoal-800 px-3.5 py-1.5 rounded-full transition-colors active:scale-95"
+              key={mood}
+              onClick={() => handleMoodClick(mood)}
+              className="text-xs font-sans bg-parchment-200/80 hover:bg-parchment-300 text-charcoal-800 px-3 py-1.5 rounded-full transition-colors active:scale-95"
             >
-              {mood.label}
+              {mood}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Search Results */}
+      {/* Search Results / Music Posters List */}
       <div>
         <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-3 block">
-          {searchResults.length > 0 ? 'Results' : 'Recommended For You'}
+          {searchResults.length > 0 ? `Results (${searchResults.length})` : 'Popular Tracks'}
         </span>
 
-        <div className="flex flex-col gap-2">
-          {(searchResults.length > 0 ? searchResults : ZEN_COLLECTIONS).map((item) => (
-            <div
-              key={item.id || item.idYoutube}
-              onClick={() => playTrack(item)}
-              className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/70 hover:bg-parchment-200 border border-sage-100/50 cursor-pointer active:scale-98 transition-all group"
-            >
-              <div className="flex items-center gap-3 min-w-0 pr-2">
-                <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-parchment-200">
-                  <img src={item.artwork} alt={item.title} className="w-full h-full object-cover" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-medium text-charcoal-900 truncate">
-                    {item.title}
-                  </h4>
-                  <p className="text-[11px] font-sans text-charcoal-600 truncate">
-                    {item.artist}
-                  </p>
-                </div>
-              </div>
+        <div className="flex flex-col gap-2.5">
+          {(searchResults.length > 0 ? searchResults : [...FEATURED_ALBUM.tracks, ...RECENTLY_PLAYED]).map(
+            (track) => {
+              const isThisPlaying =
+                (currentTrack?.id || currentTrack?.idYoutube) === (track.id || track.idYoutube);
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-sans text-charcoal-400">
-                  {item.duration}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playTrack(item);
-                  }}
-                  className="w-8 h-8 rounded-full bg-sage-700 text-white flex items-center justify-center shadow-sm"
-                  aria-label="Play track"
+              return (
+                <div
+                  key={track.id || track.idYoutube}
+                  onClick={() => playTrack(track, searchResults.length > 0 ? searchResults : null)}
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200 border border-sage-100/70 cursor-pointer active:scale-98 transition-all group"
                 >
-                  <Play className="w-3 h-3 fill-white ml-0.5" />
-                </button>
-              </div>
-            </div>
-          ))}
+                  <div className="flex items-center gap-3.5 min-w-0 pr-2">
+                    {/* Real Music Poster Thumbnail */}
+                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 border border-black/5 shadow-sm">
+                      <img
+                        src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
+                        alt={track.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
+                        }}
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <h4
+                        className={`text-xs font-medium tracking-tight truncate ${
+                          isThisPlaying ? 'text-sage-800 font-semibold' : 'text-charcoal-900'
+                        }`}
+                      >
+                        {track.title}
+                      </h4>
+                      <p className="text-[11px] font-sans text-charcoal-600 truncate mt-0.5">
+                        {track.artist}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playTrack(track, searchResults.length > 0 ? searchResults : null);
+                      }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                        isThisPlaying && isPlaying
+                          ? 'bg-sage-700 text-white'
+                          : 'bg-parchment-200 text-charcoal-800 hover:bg-sage-700 hover:text-white'
+                      }`}
+                      aria-label="Play track"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+          )}
         </div>
       </div>
 

@@ -11,26 +11,26 @@ export const HiddenPlayer = () => {
     setIsPlaying,
     setIsBuffering,
     nextTrack,
-    isSeekingRef
+    isSeekingRef,
+    pendingTrackRef
   } = usePlayer();
 
   const playerRef = useRef(null);
-  const containerRef = useRef(null);
-  const progressIntervalRef = useRef(null);
+  const isReadyRef = useRef(false);
+  const timeUpdateTimerRef = useRef(null);
 
   useEffect(() => {
-    let checkYtInterval = null;
-
-    const initPlayer = () => {
+    const initYT = () => {
       if (!window.YT || !window.YT.Player) return;
+      if (playerRef.current) return;
 
-      const ytId = currentTrack?.idYoutube || currentTrack?.id || 'SDNA934EEVk';
+      const defaultId = currentTrack?.idYoutube || currentTrack?.id || 'mehLx_Fjv_c';
 
       try {
         playerRef.current = new window.YT.Player('sora-hidden-player-mount', {
-          height: '1',
-          width: '1',
-          videoId: ytId,
+          height: '160',
+          width: '240',
+          videoId: defaultId,
           playerVars: {
             autoplay: 0,
             controls: 0,
@@ -39,108 +39,124 @@ export const HiddenPlayer = () => {
             iv_load_policy: 3,
             modestbranding: 1,
             playsinline: 1,
-            rel: 0
+            rel: 0,
+            origin: window.location.origin
           },
           events: {
             onReady: (event) => {
+              isReadyRef.current = true;
               setPlayerInstance(event.target);
+
+              // If a track was queued or user clicked play before ready
+              if (pendingTrackRef?.current) {
+                const vid = pendingTrackRef.current.idYoutube || pendingTrackRef.current.id;
+                event.target.loadVideoById({ videoId: vid, startSeconds: 0 });
+                event.target.playVideo();
+                pendingTrackRef.current = null;
+              }
             },
             onStateChange: (event) => {
-              // YT.PlayerState: PLAYING (1), PAUSED (2), BUFFERING (3), ENDED (0)
-              if (event.data === 1) {
+              // 1: PLAYING, 2: PAUSED, 3: BUFFERING, 0: ENDED, -1: UNSTARTED
+              if (event.data === window.YT.PlayerState.PLAYING) {
                 setIsPlaying(true);
                 setIsBuffering(false);
                 const dur = event.target.getDuration();
                 if (dur && dur > 0) setDuration(dur);
-              } else if (event.data === 2) {
+              } else if (event.data === window.YT.PlayerState.PAUSED) {
                 setIsPlaying(false);
                 setIsBuffering(false);
-              } else if (event.data === 3) {
+              } else if (event.data === window.YT.PlayerState.BUFFERING) {
                 setIsBuffering(true);
-              } else if (event.data === 0) {
+              } else if (event.data === window.YT.PlayerState.ENDED) {
                 setIsPlaying(false);
+                setIsBuffering(false);
                 nextTrack();
               }
             },
             onError: (err) => {
-              console.warn('YouTube Audio Player Notice:', err);
+              console.warn('YouTube Player Event Notice:', err);
               setIsBuffering(false);
-              // In case video is restricted or unavailable, advance after 1.5s
+              // Video restricted or cannot embed, gracefully advance
               setTimeout(() => {
                 nextTrack();
-              }, 1500);
+              }, 1200);
             }
           }
         });
-      } catch (err) {
-        console.warn('Player init issue:', err);
+      } catch (e) {
+        console.warn('Failed to construct YT.Player:', e);
       }
     };
 
     if (window.YT && window.YT.Player) {
-      initPlayer();
+      initYT();
     } else {
-      checkYtInterval = setInterval(() => {
-        if (window.YT && window.YT.Player) {
-          clearInterval(checkYtInterval);
-          initPlayer();
+      window.onYouTubeIframeAPIReady = initYT;
+      // Also ensure API script is in document
+      if (!document.getElementById('yt-iframe-api-tag')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-tag';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const first = document.getElementsByTagName('script')[0];
+        if (first && first.parentNode) {
+          first.parentNode.insertBefore(tag, first);
+        } else {
+          document.head.appendChild(tag);
         }
-      }, 250);
+      }
     }
 
     return () => {
-      if (checkYtInterval) clearInterval(checkYtInterval);
       if (playerRef.current && playerRef.current.destroy) {
         try {
           playerRef.current.destroy();
         } catch {
-          // cleanup
+          // ignore
         }
       }
     };
   }, []);
 
-  // Update playback time polling
+  // Time tracking interval
   useEffect(() => {
     if (isPlaying) {
-      progressIntervalRef.current = setInterval(() => {
+      timeUpdateTimerRef.current = setInterval(() => {
         if (playerRef.current && playerRef.current.getCurrentTime && !isSeekingRef.current) {
           try {
-            const time = playerRef.current.getCurrentTime();
+            const cur = playerRef.current.getCurrentTime();
             const dur = playerRef.current.getDuration();
-            if (typeof time === 'number') setCurrentTime(time);
+            if (typeof cur === 'number') setCurrentTime(cur);
             if (typeof dur === 'number' && dur > 0) setDuration(dur);
           } catch {
-            // ignore cross-origin polling hiccups
+            // cross origin security polling
           }
         }
-      }, 350);
+      }, 300);
     } else {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+      if (timeUpdateTimerRef.current) {
+        clearInterval(timeUpdateTimerRef.current);
       }
     }
 
     return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+      if (timeUpdateTimerRef.current) {
+        clearInterval(timeUpdateTimerRef.current);
       }
     };
   }, [isPlaying]);
 
   return (
     <div
-      ref={containerRef}
       style={{
         position: 'fixed',
-        top: '-9999px',
-        left: '-9999px',
-        width: '1px',
-        height: '1px',
-        opacity: 0,
+        bottom: 0,
+        right: 0,
+        width: '240px',
+        height: '160px',
+        opacity: 0.001,
         pointerEvents: 'none',
-        overflow: 'hidden',
-        zIndex: -9999
+        zIndex: -999,
+        overflow: 'hidden'
       }}
       aria-hidden="true"
     >

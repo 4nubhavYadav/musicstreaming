@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Loader2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { FEATURED_ALBUM } from '../data/catalog';
 
@@ -7,6 +7,7 @@ export const FeaturedCard = () => {
   const {
     currentTrack,
     isPlaying,
+    isBuffering,
     currentTime,
     duration,
     togglePlayPause,
@@ -16,9 +17,8 @@ export const FeaturedCard = () => {
     openNowPlaying
   } = usePlayer();
 
-  const isCurrentAlbum = currentTrack?.album === FEATURED_ALBUM.title;
-
-  const handlePlayAlbum = () => {
+  const handlePlayAlbum = (e) => {
+    e.stopPropagation();
     playTrack(FEATURED_ALBUM.tracks[0], FEATURED_ALBUM.tracks);
   };
 
@@ -30,22 +30,26 @@ export const FeaturedCard = () => {
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const currentPoster = currentTrack?.artwork || `https://i.ytimg.com/vi/${currentTrack?.id || 'mehLx_Fjv_c'}/hqdefault.jpg`;
 
   return (
     <div className="px-6 mb-7">
       <div className="bg-sage-700 text-parchment-50 rounded-[28px] p-5 shadow-zen relative overflow-hidden transition-all duration-300">
         
-        {/* Top Half: Album Showcase */}
+        {/* Top Half: Featured Album Showcase with Real Poster */}
         <div className="flex gap-4 items-start mb-6">
-          {/* Artwork */}
+          {/* Real Music Poster Thumbnail */}
           <div 
             onClick={openNowPlaying}
-            className="w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md cursor-pointer group relative active:scale-95 transition-transform"
+            className="w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md cursor-pointer group relative active:scale-95 transition-transform bg-charcoal-800"
           >
             <img
               src={FEATURED_ALBUM.artwork}
               alt={FEATURED_ALBUM.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => {
+                e.target.src = 'https://i.ytimg.com/vi/mehLx_Fjv_c/hqdefault.jpg';
+              }}
             />
           </div>
 
@@ -83,13 +87,16 @@ export const FeaturedCard = () => {
           className="pt-3 border-t border-white/10 flex flex-col gap-2 cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            {/* Track Info */}
+            {/* Track Info with Music Poster */}
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+              <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 border border-white/10 bg-charcoal-800">
                 <img
-                  src={currentTrack?.artwork || FEATURED_ALBUM.artwork}
+                  src={currentPoster}
                   alt={currentTrack?.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://i.ytimg.com/vi/mehLx_Fjv_c/hqdefault.jpg';
+                  }}
                 />
               </div>
               <div className="min-w-0">
@@ -117,7 +124,9 @@ export const FeaturedCard = () => {
                 className="w-9 h-9 rounded-full bg-white text-sage-800 flex items-center justify-center shadow-md active:scale-95 hover:bg-parchment-50 transition-all"
                 aria-label={isPlaying ? 'Pause' : 'Play'}
               >
-                {isPlaying ? (
+                {isBuffering ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-sage-800" />
+                ) : isPlaying ? (
                   <Pause className="w-4 h-4 fill-current text-sage-800" />
                 ) : (
                   <Play className="w-4 h-4 fill-current text-sage-800 ml-0.5" />
