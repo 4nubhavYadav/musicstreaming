@@ -1,2 +1,0 @@
-# Disable Jekyll processing
-include: [".nojekyll", "assets", "manifest.webmanifest", "sw.js"]
