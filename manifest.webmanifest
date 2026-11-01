@@ -1,0 +1,19 @@
+{
+  "name": "Sora · Zen Audio",
+  "short_name": "Sora",
+  "description": "Premium minimalist audio streaming powered by YouTube",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EE",
+  "theme_color": "#F7F4EE",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
