@@ -1,46 +1,22 @@
-const CACHE_NAME = 'sora-zen-cache-v1';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './favicon.svg',
-  './manifest.webmanifest'
-];
-
+// Sora Service Worker - v2 (Auto cache-purge)
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => {
-          if (name !== CACHE_NAME) {
-            return caches.delete(name);
-          }
-        })
-      );
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((k) => caches.delete(k)));
     })
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass YouTube API & media network requests through directly
-  if (event.request.url.includes('youtube.com') || 
-      event.request.url.includes('ytimg.com') || 
-      event.request.url.includes('googlevideo.com')) {
-    return;
-  }
-
+  // Always fetch from network first so users always see latest code
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });
