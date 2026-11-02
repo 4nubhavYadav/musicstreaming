@@ -17,8 +17,8 @@ export const Header = ({ onOpenSleepTimer }) => {
         onClick={onOpenSleepTimer}
         className={`p-2 rounded-full border transition-all active:scale-95 ${
           sleepTimerSecondsLeft
-            ? 'bg-terracotta-100/80 border-terracotta-400 text-terracotta-600'
-            : 'bg-parchment-200/60 border-sage-200/70 text-charcoal-600 hover:text-charcoal-900'
+            ? 'bg-terracotta-100/80 border-terracotta-400 text-terracotta-400'
+            : 'bg-parchment-50 border-white/10 text-charcoal-400 hover:text-charcoal-900'
         }`}
         aria-label="Zen Sleep Timer"
       >

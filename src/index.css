@@ -7,12 +7,13 @@
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: #000000;
   }
 
   body {
-    background-color: #F7F4EE;
-    color: #201E1B;
-    background-image: radial-gradient(rgba(82, 96, 73, 0.04) 1px, transparent 0);
+    background-color: #000000;
+    color: #F5EFEB;
+    background-image: radial-gradient(rgba(245, 239, 235, 0.035) 1px, transparent 0);
     background-size: 24px 24px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -49,9 +50,9 @@ input[type=range]::-webkit-slider-thumb {
   height: 12px;
   width: 12px;
   border-radius: 9999px;
-  background: #526049;
+  background: #E8DFD1;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.8);
   margin-top: -4px;
   transition: transform 0.15s ease;
 }
@@ -62,6 +63,6 @@ input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 4px;
   cursor: pointer;
-  background: rgba(82, 96, 73, 0.15);
+  background: rgba(245, 239, 235, 0.15);
   border-radius: 9999px;
 }

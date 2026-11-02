@@ -21,16 +21,16 @@ export const SleepTimerModal = ({ isOpen, onClose }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-charcoal-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
-        className="w-full max-w-sm bg-parchment-100 rounded-3xl p-6 shadow-zen border border-sage-100 animate-in slide-in-from-bottom duration-250"
+        className="w-full max-w-sm bg-parchment-50 rounded-3xl p-6 shadow-zen border border-white/10 animate-in slide-in-from-bottom duration-250"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-sage-100 flex items-center justify-center text-sage-800">
+            <div className="w-8 h-8 rounded-full bg-parchment-200 flex items-center justify-center text-charcoal-800">
               <Moon className="w-4 h-4" />
             </div>
             <h3 className="font-serif text-lg font-semibold text-charcoal-900">
@@ -39,13 +39,13 @@ export const SleepTimerModal = ({ isOpen, onClose }) => {
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 text-charcoal-400 hover:text-charcoal-800 rounded-full"
+            className="p-1.5 text-charcoal-400 hover:text-charcoal-900 rounded-full hover:bg-parchment-200"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-xs font-sans text-charcoal-600 mb-5 leading-relaxed">
+        <p className="text-xs font-sans text-charcoal-500 mb-5 leading-relaxed">
           Music will gently fade out and stop when the timer finishes.
         </p>
 
@@ -58,12 +58,12 @@ export const SleepTimerModal = ({ isOpen, onClose }) => {
                 onClick={() => handleSelect(opt.minutes)}
                 className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-xs font-sans font-medium transition-all ${
                   isSelected
-                    ? 'bg-sage-700 text-white shadow-sm'
-                    : 'bg-parchment-50 text-charcoal-800 hover:bg-parchment-200 border border-sage-100/60'
+                    ? 'bg-sage-700 text-black font-semibold shadow-sm'
+                    : 'bg-parchment-100 text-charcoal-800 hover:bg-parchment-200 border border-white/10'
                 }`}
               >
                 <span>{opt.label}</span>
-                {isSelected && <Check className="w-4 h-4 text-white" />}
+                {isSelected && <Check className="w-4 h-4 text-black stroke-[2.5]" />}
               </button>
             );
           })}
@@ -71,7 +71,7 @@ export const SleepTimerModal = ({ isOpen, onClose }) => {
           {sleepTimerMinutes && (
             <button
               onClick={() => handleSelect(null)}
-              className="w-full p-3 rounded-2xl text-xs font-sans font-medium text-terracotta-500 hover:bg-terracotta-100/50 mt-1 transition-colors"
+              className="w-full p-3 rounded-2xl text-xs font-sans font-medium text-terracotta-400 hover:bg-terracotta-100/20 mt-1 transition-colors"
             >
               Turn Off Timer
             </button>

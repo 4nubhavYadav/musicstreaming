@@ -11,7 +11,7 @@ export const Navigation = ({ activeTab, onSelectTab }) => {
   return (
     <div className="fixed bottom-6 left-0 right-0 z-40 flex justify-center px-6 pointer-events-none pb-safe">
       <nav 
-        className="pointer-events-auto w-full max-w-xs bg-parchment-50/95 backdrop-blur-lg rounded-full py-1.5 px-4 shadow-dock border border-sage-100/80 flex items-center justify-around"
+        className="pointer-events-auto w-full max-w-xs bg-black/90 backdrop-blur-xl rounded-full py-1.5 px-4 shadow-dock border border-white/10 flex items-center justify-around"
         aria-label="Main Navigation"
       >
         {tabs.map((tab) => {
@@ -24,7 +24,7 @@ export const Navigation = ({ activeTab, onSelectTab }) => {
               onClick={() => onSelectTab(tab.id)}
               className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-full transition-all active:scale-95 ${
                 isActive
-                  ? 'bg-sage-100/90 text-sage-900 font-semibold shadow-sm'
+                  ? 'bg-parchment-50 text-charcoal-900 font-semibold shadow-sm border border-white/10'
                   : 'text-charcoal-400 hover:text-charcoal-800'
               }`}
               aria-label={tab.label}

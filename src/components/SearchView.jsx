@@ -162,7 +162,7 @@ export const SearchView = () => {
               }
             }}
             placeholder="Search track, artist, or paste YouTube link..."
-            className="w-full bg-parchment-50 border border-sage-200/80 rounded-2xl py-3.5 pl-11 pr-20 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-sage-700 focus:ring-1 focus:ring-sage-700 shadow-sm transition-all"
+            className="w-full bg-parchment-50 border border-white/10 rounded-2xl py-3.5 pl-11 pr-20 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 shadow-sm transition-all"
           />
           <SearchIcon className="w-4 h-4 text-charcoal-400 absolute left-4 top-1/2 -translate-y-1/2" />
 
@@ -172,18 +172,18 @@ export const SearchView = () => {
               <button
                 type="button"
                 onClick={handleClear}
-                className="p-1 text-charcoal-400 hover:text-charcoal-700 rounded-full transition-colors"
+                className="p-1 text-charcoal-400 hover:text-charcoal-900 rounded-full transition-colors"
                 aria-label="Clear query"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
             {isLoading ? (
-              <Loader2 className="w-4 h-4 text-sage-700 animate-spin" />
+              <Loader2 className="w-4 h-4 text-charcoal-400 animate-spin" />
             ) : query ? (
               <button
                 type="submit"
-                className="text-xs font-medium text-sage-800 px-2.5 py-1 bg-sage-100 hover:bg-sage-200 rounded-lg transition-colors"
+                className="text-xs font-semibold text-black px-2.5 py-1 bg-sage-700 hover:bg-sage-800 rounded-lg transition-colors"
               >
                 Go
               </button>
@@ -193,7 +193,7 @@ export const SearchView = () => {
 
         {/* Real-time Autocomplete Suggestions Dropdown */}
         {isInputFocused && suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-sage-200 rounded-2xl shadow-zen overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute left-0 right-0 top-full mt-1.5 bg-parchment-50 border border-white/10 rounded-2xl shadow-zen overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
             <div className="py-1">
               {suggestions.map((sug, idx) => (
                 <button
@@ -201,7 +201,7 @@ export const SearchView = () => {
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSelectSuggestion(sug)}
-                  className="w-full text-left px-4 py-2.5 text-xs text-charcoal-800 hover:bg-sage-50/80 flex items-center gap-2.5 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-xs text-charcoal-800 hover:bg-parchment-200 flex items-center gap-2.5 transition-colors"
                 >
                   <SearchIcon className="w-3.5 h-3.5 text-charcoal-400 flex-shrink-0" />
                   <span className="truncate">{sug}</span>
@@ -214,8 +214,8 @@ export const SearchView = () => {
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="mb-4 p-3 rounded-xl bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-terracotta-600 flex-shrink-0 mt-0.5" />
+        <div className="mb-4 p-3 rounded-xl bg-terracotta-100 border border-terracotta-400 text-terracotta-400 text-xs flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-terracotta-400 flex-shrink-0 mt-0.5" />
           <p className="font-medium flex-1">{errorMessage}</p>
         </div>
       )}
@@ -227,8 +227,8 @@ export const SearchView = () => {
             <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 block">
               Official Songs ({searchResults.length})
             </span>
-            <span className="text-[10px] text-sage-800 font-medium flex items-center gap-1">
-              <Disc3 className="w-3 h-3 text-sage-700" />
+            <span className="text-[10px] text-charcoal-500 font-medium flex items-center gap-1">
+              <Disc3 className="w-3 h-3 text-charcoal-400" />
               YouTube Music
             </span>
           </div>
@@ -243,10 +243,10 @@ export const SearchView = () => {
                 <div
                   key={track.id || track.idYoutube}
                   onClick={() => playTrack(track, searchResults)}
-                  className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200 border border-sage-100/70 cursor-pointer active:scale-98 transition-all group"
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200 border border-white/5 cursor-pointer active:scale-98 transition-all group"
                 >
                   <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 border border-black/5 shadow-sm relative">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10 shadow-sm relative">
                       <img
                         src={
                           track.artwork ||
@@ -260,7 +260,7 @@ export const SearchView = () => {
                       />
                       {isThisPlaying && isPlaying && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <span className="w-2 h-2 rounded-full bg-sage-400 animate-ping" />
+                          <span className="w-2 h-2 rounded-full bg-sage-700 animate-ping" />
                         </div>
                       )}
                     </div>
@@ -270,21 +270,21 @@ export const SearchView = () => {
                       <h4
                         className={`text-xs font-medium tracking-tight truncate ${
                           isThisPlaying
-                            ? 'text-sage-800 font-semibold'
-                            : 'text-charcoal-900'
+                            ? 'text-charcoal-900 font-semibold'
+                            : 'text-charcoal-800'
                         }`}
                       >
                         {track.title}
                       </h4>
 
                       {/* Artist Name */}
-                      <p className="text-[11px] font-sans text-charcoal-600 truncate mt-0.5">
+                      <p className="text-[11px] font-sans text-charcoal-500 truncate mt-0.5">
                         {track.artist}
                       </p>
 
                       {/* Album / Badges */}
                       <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[9px] font-medium bg-sage-100 text-sage-800 px-1.5 py-0.2 rounded-md">
+                        <span className="text-[9px] font-medium bg-parchment-200 text-charcoal-800 px-1.5 py-0.2 rounded-md border border-white/5">
                           Studio Audio
                         </span>
                         {track.album && (
@@ -307,13 +307,13 @@ export const SearchView = () => {
                       }}
                       className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm ${
                         isThisPlaying && isPlaying
-                          ? 'bg-sage-700 text-white'
-                          : 'bg-parchment-200 text-charcoal-800 hover:bg-sage-700 hover:text-white'
+                          ? 'bg-sage-700 text-black'
+                          : 'bg-parchment-200 text-charcoal-800 hover:bg-sage-700 hover:text-black'
                       }`}
                       aria-label="Play audio"
                     >
                       {isThisPlaying && isPlaying ? (
-                        <Pause className="w-3.5 h-3.5 fill-current" />
+                        <Pause className="w-3.5 h-3.5 fill-black" />
                       ) : (
                         <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                       )}
@@ -327,7 +327,7 @@ export const SearchView = () => {
       ) : (
         /* Minimal Empty State with Quick Picks */
         <div className="text-center py-12 px-4">
-          <div className="w-14 h-14 rounded-2xl bg-sage-100/60 flex items-center justify-center mx-auto mb-3.5 text-sage-700">
+          <div className="w-14 h-14 rounded-2xl bg-parchment-50 border border-white/10 flex items-center justify-center mx-auto mb-3.5 text-charcoal-400">
             <SearchIcon className="w-6 h-6 stroke-[1.75]" />
           </div>
           <h3 className="font-serif text-lg font-medium text-charcoal-900 mb-6">
@@ -347,7 +347,7 @@ export const SearchView = () => {
                     setQuery(pick);
                     executeSearch(pick);
                   }}
-                  className="text-xs font-sans px-3 py-1.5 rounded-full bg-parchment-200/80 hover:bg-sage-100 hover:text-sage-900 text-charcoal-700 border border-sage-100/80 transition-all active:scale-95"
+                  className="text-xs font-sans px-3 py-1.5 rounded-full bg-parchment-50 hover:bg-parchment-200 text-charcoal-800 border border-white/10 transition-all active:scale-95"
                 >
                   {pick}
                 </button>

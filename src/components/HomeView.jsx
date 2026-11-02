@@ -8,7 +8,6 @@ import {
   Share2,
   Loader2,
   Sparkles,
-  Compass,
   Radio,
   RefreshCw
 } from 'lucide-react';
@@ -94,14 +93,14 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
     <div className="px-6 mb-24 animate-in fade-in duration-200 space-y-7">
       {/* Cold Start Artist Picker */}
       {homeData?.isColdStart && (
-        <div className="p-4 rounded-3xl bg-sage-50/90 border border-sage-200/80 shadow-sm animate-in fade-in duration-300">
+        <div className="p-4 rounded-3xl bg-parchment-50 border border-white/10 shadow-sm animate-in fade-in duration-300">
           <div className="flex items-center gap-2 mb-1.5">
-            <Sparkles className="w-4 h-4 text-sage-700 flex-shrink-0" />
+            <Sparkles className="w-4 h-4 text-charcoal-800 flex-shrink-0" />
             <h3 className="font-serif text-sm font-semibold text-charcoal-900">
               Tune Your Recommendations
             </h3>
           </div>
-          <p className="text-[11px] font-sans text-charcoal-600 mb-3.5 leading-relaxed">
+          <p className="text-[11px] font-sans text-charcoal-500 mb-3.5 leading-relaxed">
             Pick an artist you love to seed your personalized radio & quick picks.
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -112,13 +111,13 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                 onClick={() => handleSeedArtist(artist)}
                 className={`text-xs font-sans px-3 py-1.5 rounded-full border transition-all active:scale-95 flex items-center gap-1.5 ${
                   seedingArtist === artist
-                    ? 'bg-sage-700 text-white border-sage-700 animate-pulse'
-                    : 'bg-white hover:bg-sage-100 text-charcoal-800 border-sage-200'
+                    ? 'bg-sage-700 text-black border-sage-700 animate-pulse font-medium'
+                    : 'bg-parchment-100 hover:bg-parchment-200 text-charcoal-800 border-white/10'
                 }`}
               >
                 <span>{artist}</span>
                 {seedingArtist === artist && (
-                  <Loader2 className="w-3 h-3 animate-spin text-white" />
+                  <Loader2 className="w-3 h-3 animate-spin text-black" />
                 )}
               </button>
             ))}
@@ -130,28 +129,28 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
       {isLoading && !homeData && (
         <div className="space-y-6 animate-pulse">
           <div className="space-y-3">
-            <div className="h-5 w-32 bg-sage-200/60 rounded-md" />
+            <div className="h-5 w-32 bg-parchment-200 rounded-md" />
             <div className="flex gap-3 overflow-hidden">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="w-36 h-44 bg-sage-100/80 rounded-2xl flex-shrink-0" />
+                <div key={i} className="w-36 h-44 bg-parchment-50 rounded-2xl flex-shrink-0 border border-white/5" />
               ))}
             </div>
           </div>
           <div className="space-y-2">
-            <div className="h-5 w-44 bg-sage-200/60 rounded-md" />
-            <div className="h-14 bg-sage-100/70 rounded-2xl" />
-            <div className="h-14 bg-sage-100/70 rounded-2xl" />
+            <div className="h-5 w-44 bg-parchment-200 rounded-md" />
+            <div className="h-14 bg-parchment-50 rounded-2xl border border-white/5" />
+            <div className="h-14 bg-parchment-50 rounded-2xl border border-white/5" />
           </div>
         </div>
       )}
 
       {/* Error State with Retry */}
       {error && !isLoading && (
-        <div className="p-4 rounded-2xl bg-terracotta-50/70 border border-terracotta-200 text-terracotta-800 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-terracotta-100 border border-terracotta-400 text-terracotta-400 text-xs flex items-center justify-between">
           <span>{error}</span>
           <button
             onClick={loadRecommendations}
-            className="flex items-center gap-1 text-[11px] font-medium text-terracotta-900 underline"
+            className="flex items-center gap-1 text-[11px] font-medium text-terracotta-400 underline"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Retry</span>
@@ -190,7 +189,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                       onClick={() => handleTrackClick(track, shelf.items)}
                       className="w-36 sm:w-40 flex-shrink-0 group cursor-pointer active:scale-98 transition-all"
                     >
-                      <div className="w-36 sm:w-40 h-36 sm:h-40 rounded-2xl overflow-hidden bg-charcoal-800 border border-black/5 shadow-sm relative mb-2">
+                      <div className="w-36 sm:w-40 h-36 sm:h-40 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-sm relative mb-2">
                         <img
                           src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                           alt={track.title}
@@ -201,21 +200,21 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                         />
                         {/* Play overlay button */}
                         <div
-                          className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity ${
+                          className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${
                             isThisPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-sage-700 text-white flex items-center justify-center shadow-md">
+                          <div className="w-10 h-10 rounded-full bg-sage-700 text-black flex items-center justify-center shadow-md">
                             {isThisPlaying && isPlaying ? (
-                              <Pause className="w-4 h-4 fill-current stroke-none" />
+                              <Pause className="w-4 h-4 fill-black stroke-none" />
                             ) : (
-                              <Play className="w-4 h-4 fill-current stroke-none ml-0.5" />
+                              <Play className="w-4 h-4 fill-black stroke-none ml-0.5" />
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <h4 className={`text-xs font-medium truncate ${isThisPlaying ? 'text-sage-800 font-semibold' : 'text-charcoal-900'}`}>
+                      <h4 className={`text-xs font-medium truncate ${isThisPlaying ? 'text-charcoal-900 font-semibold' : 'text-charcoal-800'}`}>
                         {track.title}
                       </h4>
                       <p className="text-[11px] font-sans text-charcoal-500 truncate mt-0.5">
@@ -238,7 +237,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
           </h3>
           <button
             onClick={onOpenAll}
-            className="text-xs font-sans text-charcoal-600 hover:text-charcoal-900 flex items-center gap-0.5 transition-colors font-medium"
+            className="text-xs font-sans text-charcoal-400 hover:text-charcoal-900 flex items-center gap-0.5 transition-colors font-medium"
           >
             <span>Library</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -246,8 +245,8 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
         </div>
 
         {recentlyPlayed.length === 0 ? (
-          <div className="text-center py-10 px-4 bg-parchment-50/70 rounded-3xl border border-dashed border-sage-200">
-            <Radio className="w-7 h-7 text-sage-600/50 mx-auto mb-2" />
+          <div className="text-center py-10 px-4 bg-parchment-50 rounded-3xl border border-dashed border-white/10">
+            <Radio className="w-7 h-7 text-charcoal-400/50 mx-auto mb-2" />
             <p className="text-xs font-serif font-medium text-charcoal-900 mb-1">
               Your space is quiet
             </p>
@@ -257,7 +256,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
             {onOpenSearch && (
               <button
                 onClick={onOpenSearch}
-                className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-sage-700 hover:bg-sage-800 text-white text-xs font-sans font-medium rounded-xl shadow-sm transition-colors"
+                className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-sage-700 hover:bg-sage-800 text-black text-xs font-sans font-semibold rounded-xl shadow-sm transition-colors"
               >
                 <span>Search Music</span>
               </button>
@@ -274,10 +273,10 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                 <div
                   key={track.id || track.idYoutube}
                   onClick={() => handleTrackClick(track, recentlyPlayed)}
-                  className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/60 hover:bg-parchment-200/60 active:bg-parchment-200 border border-sage-100/60 transition-all cursor-pointer group relative"
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200/80 active:bg-parchment-200 border border-white/5 transition-all cursor-pointer group relative"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
-                    <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 border border-black/5 shadow-sm relative">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10 shadow-sm relative">
                       <img
                         src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                         alt={track.title}
@@ -288,7 +287,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                       />
                       {isThisPlaying && isPlaying && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <span className="w-2 h-2 rounded-full bg-sage-400 animate-ping" />
+                          <span className="w-2 h-2 rounded-full bg-sage-700 animate-ping" />
                         </div>
                       )}
                     </div>
@@ -296,7 +295,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                     <div className="min-w-0">
                       <h4
                         className={`text-xs font-medium tracking-tight truncate ${
-                          isThisPlaying ? 'text-sage-800 font-semibold' : 'text-charcoal-900'
+                          isThisPlaying ? 'text-charcoal-900 font-semibold' : 'text-charcoal-800'
                         }`}
                       >
                         {track.title}
@@ -315,7 +314,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                     <div className="relative">
                       <button
                         onClick={(e) => handleMenuToggle(e, track.id)}
-                        className="p-1.5 text-charcoal-400 hover:text-charcoal-700 rounded-full hover:bg-parchment-300/50"
+                        className="p-1.5 text-charcoal-400 hover:text-charcoal-900 rounded-full hover:bg-parchment-200"
                         aria-label="Track options"
                       >
                         <MoreHorizontal className="w-3.5 h-3.5" />
@@ -323,7 +322,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
 
                       {activeMenuTrackId === track.id && (
                         <div
-                          className="absolute right-0 top-8 z-30 bg-parchment-50 border border-sage-100 rounded-2xl shadow-zen p-1.5 min-w-[140px] text-xs font-sans text-charcoal-800 animate-in fade-in zoom-in-95 duration-150"
+                          className="absolute right-0 top-8 z-30 bg-parchment-50 border border-white/10 rounded-2xl shadow-zen p-1.5 min-w-[140px] text-xs font-sans text-charcoal-800 animate-in fade-in zoom-in-95 duration-150"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
@@ -336,8 +335,8 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                             <Heart
                               className={`w-3.5 h-3.5 ${
                                 isLiked(track.id)
-                                  ? 'fill-terracotta-500 text-terracotta-500'
-                                  : ''
+                                  ? 'fill-terracotta-400 text-terracotta-400'
+                                  : 'text-charcoal-400'
                               }`}
                             />
                             <span>
@@ -356,7 +355,7 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-parchment-200 text-left"
                           >
-                            <Share2 className="w-3.5 h-3.5" />
+                            <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
                             <span>Share Track</span>
                           </button>
                         </div>
@@ -370,15 +369,15 @@ export const HomeView = ({ onOpenAll, onOpenSearch }) => {
                       }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
                         isThisPlaying && isPlaying
-                          ? 'bg-sage-700 text-white'
-                          : 'bg-parchment-200/90 hover:bg-parchment-300 text-charcoal-800'
+                          ? 'bg-sage-700 text-black'
+                          : 'bg-parchment-200 hover:bg-sage-700 text-charcoal-800 hover:text-black'
                       }`}
                       aria-label="Play track"
                     >
                       {isThisPlaying && isBuffering ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                       ) : isThisPlaying && isPlaying ? (
-                        <Pause className="w-3.5 h-3.5 fill-current stroke-none" />
+                        <Pause className="w-3.5 h-3.5 fill-black stroke-none" />
                       ) : (
                         <Play className="w-3.5 h-3.5 fill-current stroke-none ml-0.5" />
                       )}

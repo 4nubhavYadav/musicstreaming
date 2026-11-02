@@ -53,9 +53,9 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0EBE1] flex justify-center items-center sm:p-4">
+    <div className="min-h-screen bg-black flex justify-center items-center sm:p-4">
       {/* Mobile Frame Container */}
-      <div className="w-full max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[896px] sm:rounded-[44px] bg-parchment-100 shadow-2xl relative overflow-hidden flex flex-col border border-black/5">
+      <div className="w-full max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[896px] sm:rounded-[44px] bg-black shadow-2xl relative overflow-hidden flex flex-col border border-white/10">
         
         {/* Invisible YouTube Audio Engine (Zero Video) */}
         <HiddenPlayer />
@@ -97,11 +97,11 @@ function MainApp() {
 
         {/* Phase 6: In-App APK Update Dialog */}
         {updateInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-xs bg-parchment-50 border border-sage-200 rounded-3xl p-5 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-xs bg-parchment-50 border border-white/10 rounded-3xl p-5 shadow-2xl space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sage-800">
-                  <Sparkles className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-charcoal-900">
+                  <Sparkles className="w-4 h-4 text-charcoal-800" />
                   <span className="font-serif font-semibold text-sm text-charcoal-900">
                     Update Available
                   </span>
@@ -109,7 +109,7 @@ function MainApp() {
                 {!isDownloading && (
                   <button
                     onClick={() => setUpdateInfo(null)}
-                    className="p-1 rounded-full text-charcoal-400 hover:text-charcoal-700 hover:bg-parchment-200"
+                    className="p-1 rounded-full text-charcoal-400 hover:text-charcoal-800 hover:bg-parchment-200"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -120,18 +120,18 @@ function MainApp() {
                 <p className="text-xs font-semibold text-charcoal-800">
                   Sora v{updateInfo.remoteVersionName}
                 </p>
-                <p className="text-[11px] font-sans text-charcoal-600 leading-relaxed">
+                <p className="text-[11px] font-sans text-charcoal-500 leading-relaxed">
                   {updateInfo.notes}
                 </p>
               </div>
 
               {isDownloading && (
                 <div className="space-y-1.5 pt-1">
-                  <div className="flex justify-between text-[10px] font-mono text-charcoal-600">
+                  <div className="flex justify-between text-[10px] font-mono text-charcoal-500">
                     <span>Downloading...</span>
                     <span>{downloadProgress !== null ? `${downloadProgress}%` : ''}</span>
                   </div>
-                  <div className="w-full h-2 bg-sage-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-parchment-200 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-sage-700 transition-all duration-200"
                       style={{ width: `${downloadProgress || 10}%` }}
@@ -144,7 +144,7 @@ function MainApp() {
                 {!isDownloading && (
                   <button
                     onClick={() => setUpdateInfo(null)}
-                    className="flex-1 py-2 rounded-xl text-xs font-sans text-charcoal-600 hover:bg-parchment-200 transition-colors"
+                    className="flex-1 py-2 rounded-xl text-xs font-sans text-charcoal-500 hover:text-charcoal-800 hover:bg-parchment-200 transition-colors"
                   >
                     Later
                   </button>
@@ -152,16 +152,16 @@ function MainApp() {
                 <button
                   disabled={isDownloading}
                   onClick={handleStartUpdate}
-                  className="flex-1 py-2 px-3 rounded-xl bg-sage-700 hover:bg-sage-800 active:scale-95 text-white text-xs font-sans font-medium flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                  className="flex-1 py-2 px-3 rounded-xl bg-sage-700 hover:bg-sage-800 active:scale-95 text-black text-xs font-sans font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all"
                 >
                   {isDownloading ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                       <span>Installing...</span>
                     </>
                   ) : (
                     <>
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 text-black" />
                       <span>Update</span>
                     </>
                   )}

@@ -8,33 +8,41 @@ export default {
     extend: {
       colors: {
         parchment: {
-          50: '#FAF7F2',
-          100: '#F7F4EE',
-          200: '#EFEAE0',
-          300: '#E3DCce',
-          400: '#CFC5B2',
+          50: '#121212',  // elevated cards, dock, sheets, modals
+          100: '#000000', // completely black background
+          200: '#1C1C1C', // hover / active cards
+          300: '#2A2A2A', // borders / divider lines / tracks
+          400: '#3D3D3D',
         },
         sage: {
-          50: '#F1F4EE',
-          100: '#E2E8DC',
-          200: '#C5D2BD',
-          600: '#5F7054',
-          700: '#526049',
-          800: '#434F3C',
-          900: '#2C3527',
+          50: '#141412',
+          100: '#22201B',
+          200: '#353127',
+          300: '#4A4437',
+          400: '#C7B9A2',
+          600: '#D0C4AF', // warm beige progress line
+          700: '#E8DFD1', // primary beige button disc
+          800: '#DDD2BF', // primary beige button hover
+          900: '#000000', // black icon on solid beige button
         },
         terracotta: {
-          100: '#F7ECE6',
-          400: '#D68563',
-          500: '#C67451',
-          600: '#B26240',
+          50: '#261712',
+          100: '#341E16',
+          200: '#5A2E20',
+          400: '#E28666',
+          500: '#E87A54',
+          600: '#F09270',
+          800: '#F8B197',
+          900: '#FCE0D6',
         },
         charcoal: {
-          900: '#201E1B',
-          800: '#32302C',
-          600: '#67645E',
-          400: '#9E9A92',
-          200: '#D5D2CA',
+          900: '#F5EFEB', // primary crisp warm beige font
+          800: '#E8DFD1', // secondary warm beige font & strong icons
+          700: '#DDD2C1', // tertiary beige
+          600: '#D0C4AF', // medium beige font
+          500: '#B8AB96', // muted beige font
+          400: '#9C8F7A', // soft beige icons & captions
+          200: '#2A2722', // subtle dark beige borders
         }
       },
       fontFamily: {
@@ -46,9 +54,9 @@ export default {
         '4xl': '2.25rem',
       },
       boxShadow: {
-        'zen': '0 10px 30px -10px rgba(67, 79, 60, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04)',
-        'zen-hover': '0 20px 35px -10px rgba(67, 79, 60, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.06)',
-        'dock': '0 12px 40px -8px rgba(44, 53, 39, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)',
+        'zen': '0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 4px 12px -4px rgba(0, 0, 0, 0.4)',
+        'zen-hover': '0 20px 35px -10px rgba(0, 0, 0, 0.8), 0 8px 16px -4px rgba(0, 0, 0, 0.5)',
+        'dock': '0 12px 40px -8px rgba(0, 0, 0, 0.9), 0 2px 10px rgba(0, 0, 0, 0.6)',
       }
     },
   },
