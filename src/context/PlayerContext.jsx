@@ -229,57 +229,6 @@ export const PlayerProvider = ({ children }) => {
     }
   }, [recentlyPlayed]);
 
-  // Subscribe to native playback events when running inside Android container
-  useEffect(() => {
-    if (!isNative) return;
-
-    const unsubState = onNativeEvent('stateChanged', ({ state, isPlaying: nativePlaying }) => {
-      setIsPlaying(Boolean(nativePlaying));
-      setIsBuffering(state === 'buffering');
-    });
-
-    const unsubPos = onNativeEvent('positionUpdate', ({ positionMs, durationMs }) => {
-      if (!isSeekingRef.current) {
-        setCurrentTime(positionMs / 1000);
-        if (durationMs > 0) setDuration(durationMs / 1000);
-      }
-    });
-
-    const unsubTrack = onNativeEvent('trackChanged', (item) => {
-      if (item && item.videoId) {
-        const matching =
-          queueRef.current.find((t) => (t.id || t.idYoutube) === item.videoId) || {
-            id: item.videoId,
-            idYoutube: item.videoId,
-            title: item.title,
-            artist: item.artist,
-            artwork: item.artworkUrl
-          };
-        setCurrentTrack(matching);
-        if (typeof item.index === 'number') {
-          setQueueIndex(item.index);
-        }
-        recordTrackStart(matching);
-      }
-    });
-
-    const unsubQueueEnd = onNativeEvent('queueEnded', () => {
-      onTrackEnded();
-    });
-
-    const unsubNeedMore = onNativeEvent('needMoreTracks', () => {
-      maybeAppendMoreTracks();
-    });
-
-    return () => {
-      unsubState();
-      unsubPos();
-      unsubTrack();
-      unsubQueueEnd();
-      unsubNeedMore();
-    };
-  }, [isNative, onTrackEnded, maybeAppendMoreTracks]);
-
   const playTrack = (track = null, newQueue = null) => {
     const targetTrack = track || currentTrack;
     if (!targetTrack) return;
@@ -558,6 +507,57 @@ export const PlayerProvider = ({ children }) => {
       nextTrack();
     }
   }, [nextTrack, restartCurrentTrack]);
+
+  // Phase 5: Subscribe to native playback events when running inside Android container
+  useEffect(() => {
+    if (!isNative) return;
+
+    const unsubState = onNativeEvent('stateChanged', ({ state, isPlaying: nativePlaying }) => {
+      setIsPlaying(Boolean(nativePlaying));
+      setIsBuffering(state === 'buffering');
+    });
+
+    const unsubPos = onNativeEvent('positionUpdate', ({ positionMs, durationMs }) => {
+      if (!isSeekingRef.current) {
+        setCurrentTime(positionMs / 1000);
+        if (durationMs > 0) setDuration(durationMs / 1000);
+      }
+    });
+
+    const unsubTrack = onNativeEvent('trackChanged', (item) => {
+      if (item && item.videoId) {
+        const matching =
+          queueRef.current.find((t) => (t.id || t.idYoutube) === item.videoId) || {
+            id: item.videoId,
+            idYoutube: item.videoId,
+            title: item.title,
+            artist: item.artist,
+            artwork: item.artworkUrl
+          };
+        setCurrentTrack(matching);
+        if (typeof item.index === 'number') {
+          setQueueIndex(item.index);
+        }
+        recordTrackStart(matching);
+      }
+    });
+
+    const unsubQueueEnd = onNativeEvent('queueEnded', () => {
+      onTrackEnded();
+    });
+
+    const unsubNeedMore = onNativeEvent('needMoreTracks', () => {
+      maybeAppendMoreTracks();
+    });
+
+    return () => {
+      unsubState();
+      unsubPos();
+      unsubTrack();
+      unsubQueueEnd();
+      unsubNeedMore();
+    };
+  }, [isNative, onTrackEnded, maybeAppendMoreTracks]);
 
   const prevTrack = () => {
     if (currentTime > 3) {
