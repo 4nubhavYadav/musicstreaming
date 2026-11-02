@@ -55,6 +55,7 @@ export const HiddenPlayer = () => {
             autoplay: 0,
             controls: 0,
             disablekb: 1,
+            enablejsapi: 1,
             fs: 0,
             iv_load_policy: 3,
             modestbranding: 1,
@@ -69,7 +70,11 @@ export const HiddenPlayer = () => {
 
               if (pendingTrackRef?.current) {
                 const vid = pendingTrackRef.current.idYoutube || pendingTrackRef.current.id;
-                event.target.loadVideoById({ videoId: vid, startSeconds: 0 });
+                try {
+                  event.target.loadVideoById(vid, 0);
+                } catch {
+                  event.target.loadVideoById({ videoId: vid, startSeconds: 0 });
+                }
                 event.target.playVideo();
                 pendingTrackRef.current = null;
               }

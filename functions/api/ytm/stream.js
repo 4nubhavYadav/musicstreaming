@@ -6,12 +6,12 @@
  */
 
 const FALLBACK_RESOLVERS = [
+  'https://yt.chocolatemoo53.com',
+  'https://invidious.tiekoetter.com',
+  'https://inv.nadeko.net',
   'https://pipedapi.kavin.rocks',
   'https://api.piped.privacydev.net',
-  'https://piped-api.lunar.icu',
-  'https://inv.tux.pizza',
-  'https://invidious.nerdvpn.de',
-  'https://invidious.projectsegfau.lt'
+  'https://invidious.nerdvpn.de'
 ];
 
 export async function onRequest(context) {

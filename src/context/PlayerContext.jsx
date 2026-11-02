@@ -348,13 +348,22 @@ export const PlayerProvider = ({ children }) => {
       return;
     }
 
-    // Direct playback via YouTube IFrame player (Web fallback)
+    // Direct playback via YouTube IFrame player
     activeEngineRef.current = 'yt';
-    if (ytPlayerRef.current && ytPlayerRef.current.loadVideoById) {
+    if (ytPlayerRef.current && (ytPlayerRef.current.loadVideoById || ytPlayerRef.current.cueVideoById)) {
       try {
-        ytPlayerRef.current.loadVideoById({ videoId, startSeconds: 0 });
-        ytPlayerRef.current.playVideo();
+        if (typeof ytPlayerRef.current.loadVideoById === 'function') {
+          try {
+            ytPlayerRef.current.loadVideoById(videoId, 0);
+          } catch {
+            ytPlayerRef.current.loadVideoById({ videoId, startSeconds: 0 });
+          }
+        }
+        if (typeof ytPlayerRef.current.playVideo === 'function') {
+          ytPlayerRef.current.playVideo();
+        }
         setIsPlaying(true);
+        setIsBuffering(false);
       } catch (err) {
         console.warn('Error loading video in YT Player:', err);
       }
@@ -777,6 +786,18 @@ export const PlayerProvider = ({ children }) => {
       }
     }
   }, [currentTime, duration]);
+
+  if (typeof window !== 'undefined') {
+    window.__sora = {
+      playTrack,
+      currentTrack,
+      queue,
+      isPlaying,
+      getYTPlayer: () => ytPlayerRef.current,
+      getAudio: () => audioRef.current,
+      isNative: isNativeRef.current
+    };
+  }
 
   return (
     <PlayerContext.Provider
