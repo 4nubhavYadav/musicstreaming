@@ -16,7 +16,7 @@ import {
   isDirectYoutubeQuery
 } from '../services';
 
-export const SearchView = ({ onFocusChange }) => {
+export const SearchView = () => {
   const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -115,7 +115,6 @@ export const SearchView = ({ onFocusChange }) => {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     document.activeElement?.blur();
-    onFocusChange?.(false);
     executeSearch(query);
   };
 
@@ -123,7 +122,6 @@ export const SearchView = ({ onFocusChange }) => {
     setQuery(sug);
     setSuggestions([]);
     document.activeElement?.blur();
-    onFocusChange?.(false);
     executeSearch(sug);
   };
 
@@ -137,7 +135,7 @@ export const SearchView = ({ onFocusChange }) => {
   return (
     <div
       ref={containerRef}
-      className="px-6 pt-7 pb-28 animate-in fade-in duration-200"
+      className="px-6 pt-6 pb-20 animate-in fade-in duration-200"
     >
       {/* Header */}
       <div className="mb-4">
@@ -152,16 +150,10 @@ export const SearchView = ({ onFocusChange }) => {
           <input
             type="text"
             value={query}
-            onFocus={() => {
-              setIsInputFocused(true);
-              onFocusChange?.(true);
-            }}
+            onFocus={() => setIsInputFocused(true)}
             onBlur={() => {
               // Delay blur so clicks on suggestions register
-              setTimeout(() => {
-                setIsInputFocused(false);
-                onFocusChange?.(false);
-              }, 250);
+              setTimeout(() => setIsInputFocused(false), 250);
             }}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -172,7 +164,7 @@ export const SearchView = ({ onFocusChange }) => {
               }
             }}
             placeholder="Search track, artist, or paste YouTube link..."
-            className="w-full bg-parchment-50 border border-white/10 rounded-2xl py-3.5 pl-11 pr-20 text-base sm:text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 shadow-sm transition-all"
+            className="w-full bg-parchment-50 border border-white/10 rounded-2xl py-3.5 pl-11 pr-20 text-sm font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 shadow-sm transition-all"
           />
           <SearchIcon className="w-4 h-4 text-charcoal-400 absolute left-4 top-1/2 -translate-y-1/2" />
 
@@ -203,7 +195,7 @@ export const SearchView = ({ onFocusChange }) => {
 
         {/* Real-time Autocomplete Suggestions Dropdown */}
         {isInputFocused && suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-1.5 bg-parchment-50 border border-white/10 rounded-2xl shadow-zen overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute left-0 right-0 top-full mt-1.5 bg-black/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-zen overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
             <div className="py-1">
               {suggestions.map((sug, idx) => (
                 <button
@@ -243,7 +235,7 @@ export const SearchView = ({ onFocusChange }) => {
             </span>
           </div>
 
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             {searchResults.map((track) => {
               const isThisPlaying =
                 (currentTrack?.id || currentTrack?.idYoutube) ===
@@ -278,7 +270,7 @@ export const SearchView = ({ onFocusChange }) => {
                     <div className="min-w-0">
                       {/* Track Title */}
                       <h4
-                        className={`text-xs font-medium tracking-tight truncate ${
+                        className={`text-xs font-serif font-medium tracking-tight truncate ${
                           isThisPlaying
                             ? 'text-charcoal-900 font-semibold'
                             : 'text-charcoal-800'
@@ -335,34 +327,25 @@ export const SearchView = ({ onFocusChange }) => {
           </div>
         </div>
       ) : (
-        /* Minimal Empty State with Quick Picks */
-        <div className="text-center py-12 px-4">
-          <div className="w-14 h-14 rounded-2xl bg-parchment-50 border border-white/10 flex items-center justify-center mx-auto mb-3.5 text-charcoal-400">
-            <SearchIcon className="w-6 h-6 stroke-[1.75]" />
-          </div>
-          <h3 className="font-serif text-lg font-medium text-charcoal-900 mb-6">
-            Search Music
-          </h3>
-
-          {/* Quick Discover Chips */}
-          <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-2.5 block">
-              Suggested Artists
-            </span>
-            <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
-              {quickPicks.map((pick) => (
-                <button
-                  key={pick}
-                  onClick={() => {
-                    setQuery(pick);
-                    executeSearch(pick);
-                  }}
-                  className="text-xs font-sans px-3 py-1.5 rounded-full bg-parchment-50 hover:bg-parchment-200 text-charcoal-800 border border-white/10 transition-all active:scale-95"
-                >
-                  {pick}
-                </button>
-              ))}
-            </div>
+        /* Minimal Empty State with Clean Suggestions */
+        <div className="mt-8 px-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-3 block">
+            Suggested Artists
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {quickPicks.map((pick) => (
+              <button
+                key={pick}
+                type="button"
+                onClick={() => {
+                  setQuery(pick);
+                  executeSearch(pick);
+                }}
+                className="text-xs font-sans px-3.5 py-1.5 rounded-full bg-parchment-50/90 hover:bg-parchment-200 border border-white/10 text-charcoal-700 hover:text-charcoal-900 transition-all active:scale-95"
+              >
+                {pick}
+              </button>
+            ))}
           </div>
         </div>
       )}

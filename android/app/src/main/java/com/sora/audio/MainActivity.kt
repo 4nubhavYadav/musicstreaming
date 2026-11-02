@@ -10,5 +10,6 @@ class MainActivity : BridgeActivity() {
         registerPlugin(SoraPlayerPlugin::class.java)
         registerPlugin(AppUpdaterPlugin::class.java)
         super.onCreate(savedInstanceState)
+        window.decorView.setBackgroundColor(android.graphics.Color.BLACK)
     }
 }

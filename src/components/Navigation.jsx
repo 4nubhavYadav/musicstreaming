@@ -9,11 +9,11 @@ export const Navigation = ({ activeTab, onSelectTab }) => {
   ];
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-40 flex justify-center px-6 pointer-events-none pb-safe">
-      <nav 
-        className="pointer-events-auto w-full max-w-xs bg-black/90 backdrop-blur-xl rounded-full py-1.5 px-4 shadow-dock border border-white/10 flex items-center justify-around"
-        aria-label="Main Navigation"
-      >
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-2xl border-t border-white/10 pb-safe select-none"
+      aria-label="Main Navigation"
+    >
+      <div className="w-full max-w-md mx-auto flex items-center justify-around h-14 sm:h-16 px-4">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -22,22 +22,29 @@ export const Navigation = ({ activeTab, onSelectTab }) => {
             <button
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-full transition-all active:scale-95 ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 transition-all active:scale-95 ${
                 isActive
-                  ? 'bg-parchment-50 text-charcoal-900 font-semibold shadow-sm border border-white/10'
+                  ? 'text-charcoal-900 font-semibold'
                   : 'text-charcoal-400 hover:text-charcoal-800'
               }`}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className="w-5 h-5 stroke-[1.8]" />
-              <span className="text-[10px] font-sans mt-0.5 tracking-tight">
+              <div className="relative flex items-center justify-center">
+                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'stroke-[2.2] text-sage-700 scale-105' : 'stroke-[1.8]'}`} />
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sage-700" />
+                )}
+              </div>
+              <span className={`text-[10px] font-sans mt-1 tracking-tight transition-colors ${
+                isActive ? 'text-charcoal-900 font-medium' : 'text-charcoal-500'
+              }`}>
                 {tab.label}
               </span>
             </button>
           );
         })}
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 };

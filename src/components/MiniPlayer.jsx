@@ -24,18 +24,18 @@ export const MiniPlayer = () => {
   const liked = isLiked ? isLiked(currentTrack.id) : false;
 
   return (
-    <div className="fixed bottom-[76px] left-0 right-0 z-30 px-6 pointer-events-none pb-safe">
+    <div className="fixed bottom-[60px] sm:bottom-[68px] left-0 right-0 z-30 px-3 sm:px-4 pointer-events-none pb-safe">
       <div 
         onClick={openNowPlaying}
-        className="pointer-events-auto w-full max-w-xs mx-auto bg-parchment-50/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-dock flex flex-col overflow-hidden cursor-pointer active:scale-[0.98] transition-all group select-none"
+        className="pointer-events-auto w-full max-w-sm mx-auto bg-parchment-50/95 backdrop-blur-2xl border border-white/10 rounded-full shadow-dock flex flex-col overflow-hidden cursor-pointer active:scale-[0.98] transition-all group select-none"
         role="button"
         tabIndex={0}
         aria-label="Open now playing view"
       >
-        <div className="flex items-center justify-between p-2">
+        <div className="flex items-center justify-between p-1.5 pl-2 pr-2.5">
           {/* Track Info with Music Poster */}
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
-            <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10 relative shadow-sm">
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-black border border-white/10 relative shadow-sm">
               <img
                 src={posterUrl}
                 alt={currentTrack.title}

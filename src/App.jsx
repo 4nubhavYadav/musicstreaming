@@ -18,7 +18,6 @@ function MainApp() {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const { isNowPlayingOpen, closeNowPlaying } = usePlayer();
@@ -49,8 +48,6 @@ function MainApp() {
     return () => window.visualViewport.removeEventListener('resize', handleResize);
   }, []);
 
-  const shouldHideFloatingBars = isSearchFocused || isKeyboardOpen;
-
   const handleStartUpdate = async () => {
     if (!updateInfo?.apkUrl || isDownloading) return;
     setIsDownloading(true);
@@ -76,7 +73,7 @@ function MainApp() {
         <HiddenPlayer />
 
         {/* Content Views */}
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-32 pt-safe">
+        <main className="flex-1 overflow-y-auto no-scrollbar pb-24 pt-safe">
           {activeTab === 'home' && (
             <>
               <Header onOpenSleepTimer={() => setIsSleepTimerOpen(true)} />
@@ -87,19 +84,15 @@ function MainApp() {
             </>
           )}
 
-          {activeTab === 'search' && (
-            <SearchView onFocusChange={setIsSearchFocused} />
-          )}
+          {activeTab === 'search' && <SearchView />}
           {activeTab === 'library' && <LibraryView />}
         </main>
 
-        {/* Floating Mini Player (Hidden when keyboard/search active) */}
-        {!shouldHideFloatingBars && <MiniPlayer />}
+        {/* Floating Pill Mini Player (Hidden only while keyboard actively up) */}
+        {!isKeyboardOpen && <MiniPlayer />}
 
-        {/* Floating Bottom Dock Navigation (Hidden when keyboard/search active) */}
-        {!shouldHideFloatingBars && (
-          <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />
-        )}
+        {/* Solid Bottom Navigation Bar (Home, Search, Library) - Always present */}
+        <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />
 
         {/* Full-Screen Now Playing View */}
         <NowPlaying
