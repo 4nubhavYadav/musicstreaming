@@ -55,10 +55,11 @@ class SoraPlayerPlugin : Plugin() {
         val context = activity?.applicationContext ?: context
         val intent = Intent(context, SoraAudioService::class.java)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
+        try {
+            // Start as standard service on app launch (do NOT use startForegroundService here to avoid 60s ANR timeout)
             context.startService(intent)
+        } catch (e: Exception) {
+            // ignore
         }
 
         // Connect to SoraAudioService instance
@@ -158,19 +159,36 @@ class SoraPlayerPlugin : Plugin() {
             return
         }
 
+        val context = activity?.applicationContext ?: context
+        val intent = Intent(context, SoraAudioService::class.java)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            // ignore
+        }
+
         val rawItems = call.getArray("items", JSArray()) ?: JSArray()
         val startIndex = call.getInt("startIndex", 0) ?: 0
 
         val parsedList = mutableListOf<QueueItem>()
         for (i in 0 until rawItems.length()) {
             val obj = rawItems.getJSONObject(i)
+            val vId = obj.optString("videoId", "")
+            val sUrl = obj.optString("streamUrl", "").let {
+                if (it.isNotBlank()) it
+                else "https://yt.chocolatemoo53.com/latest_version?id=${vId}&itag=140&local=true"
+            }
             parsedList.add(
                 QueueItem(
-                    videoId = obj.optString("videoId", ""),
+                    videoId = vId,
                     title = obj.optString("title", "Unknown Title"),
                     artist = obj.optString("artist", "Unknown Artist"),
                     artworkUrl = obj.optString("artworkUrl", ""),
-                    streamUrl = obj.optString("streamUrl", ""),
+                    streamUrl = sUrl,
                     expiry = obj.optLong("expiry", 0L)
                 )
             )
@@ -193,13 +211,18 @@ class SoraPlayerPlugin : Plugin() {
         val parsedList = mutableListOf<QueueItem>()
         for (i in 0 until rawItems.length()) {
             val obj = rawItems.getJSONObject(i)
+            val vId = obj.optString("videoId", "")
+            val sUrl = obj.optString("streamUrl", "").let {
+                if (it.isNotBlank()) it
+                else "https://yt.chocolatemoo53.com/latest_version?id=${vId}&itag=140&local=true"
+            }
             parsedList.add(
                 QueueItem(
-                    videoId = obj.optString("videoId", ""),
+                    videoId = vId,
                     title = obj.optString("title", "Unknown Title"),
                     artist = obj.optString("artist", "Unknown Artist"),
                     artworkUrl = obj.optString("artworkUrl", ""),
-                    streamUrl = obj.optString("streamUrl", ""),
+                    streamUrl = sUrl,
                     expiry = obj.optLong("expiry", 0L)
                 )
             )
@@ -217,6 +240,19 @@ class SoraPlayerPlugin : Plugin() {
             call.reject("Audio service not ready")
             return
         }
+
+        val context = activity?.applicationContext ?: context
+        val intent = Intent(context, SoraAudioService::class.java)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            // ignore
+        }
+
         activity?.runOnUiThread {
             playerManager?.play()
             call.resolve()

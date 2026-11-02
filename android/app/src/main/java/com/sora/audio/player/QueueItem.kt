@@ -19,6 +19,12 @@ data class QueueItem(
     }
 
     fun toMediaItem(): MediaItem {
+        val effectiveUrl = if (streamUrl.isNotBlank()) {
+            streamUrl
+        } else {
+            "https://yt.chocolatemoo53.com/latest_version?id=${videoId}&itag=140&local=true"
+        }
+
         val metadata = MediaMetadata.Builder()
             .setTitle(title)
             .setArtist(artist)
@@ -27,7 +33,7 @@ data class QueueItem(
 
         return MediaItem.Builder()
             .setMediaId(videoId)
-            .setUri(if (streamUrl.isNotBlank()) Uri.parse(streamUrl) else Uri.EMPTY)
+            .setUri(Uri.parse(effectiveUrl))
             .setMediaMetadata(metadata)
             .build()
     }

@@ -75,20 +75,29 @@ class SoraAudioService : MediaSessionService() {
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
         val player = mediaSession?.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
+        if (player == null || !player.playWhenReady || player.mediaItemCount == 0 || player.playbackState == androidx.media3.common.Player.STATE_ENDED || player.playbackState == androidx.media3.common.Player.STATE_IDLE) {
             stopSelf()
         }
-        // If playing, DO NOT stop self! Foreground service keeps audio alive.
     }
 
     override fun onDestroy() {
         instance = null
-        mediaSession?.run {
-            player.release()
-            release()
-            mediaSession = null
+        try {
+            mediaSession?.run {
+                player.release()
+                release()
+                mediaSession = null
+            }
+        } catch (e: Exception) {
+            // ignore
         }
-        playerManager.release()
+        try {
+            if (::playerManager.isInitialized) {
+                playerManager.release()
+            }
+        } catch (e: Exception) {
+            // ignore
+        }
         super.onDestroy()
     }
 

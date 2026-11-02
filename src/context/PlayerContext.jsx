@@ -559,12 +559,26 @@ export const PlayerProvider = ({ children }) => {
       maybeAppendMoreTracks();
     });
 
+    const unsubError = onNativeEvent('error', (err) => {
+      console.warn('[NativePlayback] Native error, fallback to web:', err);
+      setIsBuffering(false);
+      if (ytPlayerRef.current && currentTrackRef.current) {
+        const vid = currentTrackRef.current.idYoutube || currentTrackRef.current.id;
+        try {
+          ytPlayerRef.current.loadVideoById(vid, 0);
+          ytPlayerRef.current.playVideo();
+          setIsPlaying(true);
+        } catch {}
+      }
+    });
+
     return () => {
       unsubState();
       unsubPos();
       unsubTrack();
       unsubQueueEnd();
       unsubNeedMore();
+      unsubError();
     };
   }, [isNative, onTrackEnded, maybeAppendMoreTracks]);
 

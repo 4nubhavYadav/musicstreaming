@@ -160,8 +160,8 @@ export async function nativeSetQueue(tracks, startIndex = 0) {
         title: track.title || 'Unknown Title',
         artist: track.artist || 'Unknown Artist',
         artworkUrl: track.artwork || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-        streamUrl,
-        expiry
+        streamUrl: streamUrl || `https://yt.chocolatemoo53.com/latest_version?id=${videoId}&itag=140&local=true`,
+        expiry: expiry || Date.now() + 6 * 3600 * 1000
       };
     })
   );
@@ -178,8 +178,8 @@ export async function nativeAppendToQueue(tracks) {
       title: track.title || 'Unknown Title',
       artist: track.artist || 'Unknown Artist',
       artworkUrl: track.artwork || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-      streamUrl: '',
-      expiry: 0
+      streamUrl: `https://yt.chocolatemoo53.com/latest_version?id=${videoId}&itag=140&local=true`,
+      expiry: Date.now() + 6 * 3600 * 1000
     };
   });
   return SoraPlayer.appendToQueue({ items });

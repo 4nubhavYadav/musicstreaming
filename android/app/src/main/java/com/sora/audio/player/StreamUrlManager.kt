@@ -27,14 +27,8 @@ object StreamUrlManager {
         return DefaultHttpDataSource.Factory()
             .setUserAgent(userAgent)
             .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(8000)
-            .setReadTimeoutMs(15000)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Origin" to "https://music.youtube.com",
-                    "Referer" to "https://music.youtube.com/"
-                )
-            )
+            .setConnectTimeoutMs(10000)
+            .setReadTimeoutMs(20000)
     }
 
     /**
@@ -72,7 +66,9 @@ object StreamUrlManager {
             item.expiry = result.second
             true
         } else {
-            false
+            item.streamUrl = "https://yt.chocolatemoo53.com/latest_version?id=${item.videoId}&itag=140&local=true"
+            item.expiry = System.currentTimeMillis() + 6 * 3600 * 1000L
+            true
         }
     }
 }
