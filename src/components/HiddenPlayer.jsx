@@ -10,21 +10,41 @@ export const HiddenPlayer = () => {
     setDuration,
     setIsPlaying,
     setIsBuffering,
-    handleTrackEnded,
+    nextTrack,
+    onTrackEnded,
+    restartCurrentTrack,
+    repeatModeRef,
     isSeekingRef,
-    pendingTrackRef
+    pendingTrackRef,
+    activeEngineRef
   } = usePlayer();
 
   const playerRef = useRef(null);
   const isReadyRef = useRef(false);
   const timeUpdateTimerRef = useRef(null);
+  const nextTrackFnRef = useRef(nextTrack);
+  const onTrackEndedFnRef = useRef(onTrackEnded);
+  const restartTrackFnRef = useRef(restartCurrentTrack);
+  const loopTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    nextTrackFnRef.current = nextTrack;
+  }, [nextTrack]);
+
+  useEffect(() => {
+    onTrackEndedFnRef.current = onTrackEnded;
+  }, [onTrackEnded]);
+
+  useEffect(() => {
+    restartTrackFnRef.current = restartCurrentTrack;
+  }, [restartCurrentTrack]);
 
   useEffect(() => {
     const initYT = () => {
       if (!window.YT || !window.YT.Player) return;
       if (playerRef.current) return;
 
-      const defaultId = currentTrack?.idYoutube || currentTrack?.id || 'mehLx_Fjv_c';
+      const defaultId = currentTrack?.idYoutube || currentTrack?.id || 'OmKAn8rNbKg';
 
       try {
         playerRef.current = new window.YT.Player('sora-hidden-player-mount', {
@@ -69,14 +89,22 @@ export const HiddenPlayer = () => {
               } else if (event.data === window.YT.PlayerState.ENDED) {
                 setIsPlaying(false);
                 setIsBuffering(false);
-                handleTrackEnded(); // Handles loop 1 or advances to next
+
+                // Handle completion, history tracking, and autoplay advance
+                if (onTrackEndedFnRef.current) {
+                  onTrackEndedFnRef.current();
+                } else if (repeatModeRef.current === 'one') {
+                  restartTrackFnRef.current();
+                } else {
+                  nextTrackFnRef.current();
+                }
               }
             },
             onError: (err) => {
               console.warn('YouTube Player Event Notice:', err);
               setIsBuffering(false);
               setTimeout(() => {
-                handleTrackEnded();
+                nextTrackFnRef.current();
               }, 1200);
             }
           }
@@ -114,9 +142,9 @@ export const HiddenPlayer = () => {
     };
   }, []);
 
-  // Time tracking interval
+  // Time tracking for fallback YouTube engine
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && activeEngineRef?.current === 'yt') {
       timeUpdateTimerRef.current = setInterval(() => {
         if (playerRef.current && playerRef.current.getCurrentTime && !isSeekingRef.current) {
           try {
@@ -124,6 +152,15 @@ export const HiddenPlayer = () => {
             const dur = playerRef.current.getDuration();
             if (typeof cur === 'number') setCurrentTime(cur);
             if (typeof dur === 'number' && dur > 0) setDuration(dur);
+
+            // Active loop protection: if within 0.5s of the end and in single track loop
+            if (repeatModeRef.current === 'one' && dur > 3 && cur >= (dur - 0.5) && !loopTriggeredRef.current) {
+              loopTriggeredRef.current = true;
+              restartTrackFnRef.current();
+              setTimeout(() => {
+                loopTriggeredRef.current = false;
+              }, 2500);
+            }
           } catch {
             // cross origin security polling
           }

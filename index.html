@@ -7,14 +7,14 @@
     <meta http-equiv="Expires" content="0" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Sora - Zen Audio</title>
+    <title>Sora</title>
 
     <script>
       // Immediately invalidate any stale PWA cache on load
       if ('caches' in window) {
         caches.keys().then(function(names) {
           for (var i = 0; i < names.length; i++) {
-            if (names[i].indexOf('v2') === -1) {
+            if (names[i].indexOf('sora-shell-v1') === -1) {
               caches.delete(names[i]);
             }
           }

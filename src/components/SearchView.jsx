@@ -1,150 +1,115 @@
-import React, { useState } from 'react';
-import { Search as SearchIcon, Play, Loader2, Music2, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Search as SearchIcon,
+  Play,
+  Pause,
+  Loader2,
+  AlertCircle,
+  Disc3,
+  X
+} from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
+import {
+  searchSongs,
+  getSearchSuggestions,
+  resolveDirectTrack,
+  isDirectYoutubeQuery
+} from '../services';
 
 export const SearchView = () => {
-  const { playTrack, currentTrack, isPlaying, recentlyPlayed } = usePlayer();
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
-  const extractYoutubeId = (text) => {
-    if (!text) return null;
-    const clean = text.trim();
-    if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
-    const match = clean.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/
-    );
-    return match ? match[1] : null;
-  };
+  const searchDebounceRef = useRef(null);
+  const containerRef = useRef(null);
 
-  const decodeHtml = (html) => {
-    const txt = document.createElement('textarea');
-    txt.innerHTML = html;
-    return txt.value;
-  };
+  // Quick discovery suggestions for empty state
+  const quickPicks = [
+    'Billie Eilish',
+    'The Weeknd',
+    'Coldplay',
+    'Taylor Swift',
+    'Arijit Singh',
+    'Kendrick Lamar'
+  ];
+
+  // Fetch autocomplete suggestions as user types
+  useEffect(() => {
+    if (!query.trim() || query.trim().length < 2 || isDirectYoutubeQuery(query)) {
+      setSuggestions([]);
+      return;
+    }
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSuggesting(true);
+      try {
+        const list = await getSearchSuggestions(query);
+        setSuggestions(list);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setIsSuggesting(false);
+      }
+    }, 220);
+
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, [query]);
 
   const executeSearch = async (searchTerm) => {
-    const rawQuery = searchTerm !== undefined ? searchTerm : query;
-    if (!rawQuery.trim()) {
+    const rawQuery = (searchTerm !== undefined ? searchTerm : query).trim();
+    if (!rawQuery) {
       setSearchResults([]);
+      setErrorMessage(null);
       return;
     }
 
     setIsLoading(true);
+    setErrorMessage(null);
+    setSuggestions([]);
 
-    // 1. Direct YouTube link or ID check
-    const directId = extractYoutubeId(rawQuery);
-    if (directId) {
-      try {
-        const res = await fetch(
-          `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${directId}`
-        );
-        const data = await res.json();
-        const directTrack = {
-          id: directId,
-          idYoutube: directId,
-          title: data.title || 'Audio Track',
-          artist: data.author_name || 'Artist',
-          album: 'Direct Stream',
-          artwork: `https://i.ytimg.com/vi/${directId}/hqdefault.jpg`,
-          duration: 'Audio'
-        };
-        playTrack(directTrack);
-        setSearchResults([directTrack]);
-        setIsLoading(false);
-        return;
-      } catch {
-        const directTrack = {
-          id: directId,
-          idYoutube: directId,
-          title: 'Audio Track',
-          artist: 'Direct Stream',
-          album: 'Direct',
-          artwork: `https://i.ytimg.com/vi/${directId}/hqdefault.jpg`,
-          duration: 'Audio'
-        };
-        playTrack(directTrack);
-        setSearchResults([directTrack]);
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    // 2. Search strictly for pure audio (appending "official audio" to avoid dialogue/music video intros)
-    const audioSearchQuery = `${rawQuery.trim()} official audio`;
-
-    const mirrors = [
-      `https://yt.chocolatemoo53.com/api/v1/search?q=${encodeURIComponent(audioSearchQuery)}&type=video`,
-      `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(audioSearchQuery)}&type=video`
-    ];
-
-    let found = false;
-    for (const mirror of mirrors) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4500);
-        const res = await fetch(mirror, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data = await res.json();
-          let items = (data || []).map((item) => {
-            const vid = item.videoId || item.id;
-            return {
-              id: vid,
-              idYoutube: vid,
-              title: decodeHtml(item.title || ''),
-              artist: decodeHtml(item.author || 'Artist'),
-              album: 'Audio Stream',
-              artwork: `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
-              duration: item.lengthSeconds
-                ? `${Math.floor(item.lengthSeconds / 60)}:${item.lengthSeconds % 60 < 10 ? '0' : ''}${item.lengthSeconds % 60}`
-                : '3:30'
-            };
-          });
-
-          // Filter out music videos that contain video sound effects/acting intros
-          const videoExcludePatterns = [
-            /\bofficial music video\b/i,
-            /\bofficial video\b/i,
-            /\bmusic video\b/i,
-            /\bshort film\b/i,
-            /\bvideo clip\b/i,
-            /\bmv\b/i
-          ];
-
-          // Prioritize pure audio tracks
-          const filteredAudio = items.filter((item) => {
-            const t = item.title.toLowerCase();
-            return !videoExcludePatterns.some((pattern) => pattern.test(t));
-          });
-
-          const finalResults = (filteredAudio.length > 0 ? filteredAudio : items).slice(0, 16);
-
-          if (finalResults.length > 0) {
-            setSearchResults(finalResults);
-            found = true;
-            break;
-          }
+    try {
+      // 1. Direct YouTube link or 11-char ID
+      if (isDirectYoutubeQuery(rawQuery)) {
+        const directTrack = await resolveDirectTrack(rawQuery);
+        if (directTrack) {
+          playTrack(directTrack);
+          setSearchResults([directTrack]);
+          setIsLoading(false);
+          return;
         }
-      } catch (e) {
-        // try next mirror
       }
-    }
 
-    // 3. Fallback to local catalog if mirrors unavailable
-    if (!found) {
-      const all = [...recentlyPlayed];
-      const localMatches = all.filter(
-        (t) =>
-          t.title.toLowerCase().includes(rawQuery.toLowerCase()) ||
-          t.artist.toLowerCase().includes(rawQuery.toLowerCase())
+      // 2. Official YouTube Music search via InnerTune engine
+      const tracks = await searchSongs(rawQuery);
+      setSearchResults(tracks);
+
+      if (tracks.length === 0) {
+        setErrorMessage(
+          'No songs found. Try searching for a different song or artist.'
+        );
+      }
+    } catch (err) {
+      console.error('[SearchView] Search error:', err);
+      setErrorMessage(
+        err.message || 'An error occurred while searching. Please try again.'
       );
-      setSearchResults(localMatches);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleFormSubmit = (e) => {
@@ -152,52 +117,121 @@ export const SearchView = () => {
     executeSearch(query);
   };
 
+  const handleSelectSuggestion = (sug) => {
+    setQuery(sug);
+    setSuggestions([]);
+    executeSearch(sug);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setSuggestions([]);
+    setSearchResults([]);
+    setErrorMessage(null);
+  };
+
   return (
-    <div className="px-6 pt-7 pb-28 animate-in fade-in duration-200">
-      
-      {/* Search Header */}
+    <div
+      ref={containerRef}
+      className="px-6 pt-7 pb-28 animate-in fade-in duration-200"
+    >
+      {/* Header */}
       <div className="mb-4">
         <h2 className="font-serif text-2xl font-semibold text-charcoal-900 tracking-tight">
           Search Music
         </h2>
-        <p className="text-xs font-sans text-charcoal-600 mt-0.5">
-          Audio only · No video intros or sound effects.
-        </p>
       </div>
 
-      {/* Clean Minimalist Search Input */}
-      <form onSubmit={handleFormSubmit} className="relative mb-6">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!e.target.value.trim()) {
-              setSearchResults([]);
-            }
-          }}
-          placeholder="Search track, artist, or paste YouTube link..."
-          className="w-full bg-parchment-50 border border-sage-200/80 rounded-2xl py-3.5 pl-11 pr-10 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-sage-700 focus:ring-1 focus:ring-sage-700 shadow-sm transition-all"
-        />
-        <SearchIcon className="w-4 h-4 text-charcoal-400 absolute left-4 top-1/2 -translate-y-1/2" />
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 text-sage-700 absolute right-4 top-1/2 -translate-y-1/2 animate-spin" />
-        ) : query ? (
-          <button
-            type="submit"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-sage-800 px-2.5 py-1 bg-sage-100 rounded-lg hover:bg-sage-200"
-          >
-            Go
-          </button>
-        ) : null}
-      </form>
+      {/* Search Input Box */}
+      <div className="relative mb-4">
+        <form onSubmit={handleFormSubmit} className="relative">
+          <input
+            type="text"
+            value={query}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => {
+              // Delay blur so clicks on suggestions register
+              setTimeout(() => setIsInputFocused(false), 200);
+            }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (!e.target.value.trim()) {
+                setSearchResults([]);
+                setSuggestions([]);
+                setErrorMessage(null);
+              }
+            }}
+            placeholder="Search track, artist, or paste YouTube link..."
+            className="w-full bg-parchment-50 border border-sage-200/80 rounded-2xl py-3.5 pl-11 pr-20 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-sage-700 focus:ring-1 focus:ring-sage-700 shadow-sm transition-all"
+          />
+          <SearchIcon className="w-4 h-4 text-charcoal-400 absolute left-4 top-1/2 -translate-y-1/2" />
 
-      {/* When user has searched: show results */}
+          {/* Right Action Buttons */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            {query && !isLoading && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="p-1 text-charcoal-400 hover:text-charcoal-700 rounded-full transition-colors"
+                aria-label="Clear query"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 text-sage-700 animate-spin" />
+            ) : query ? (
+              <button
+                type="submit"
+                className="text-xs font-medium text-sage-800 px-2.5 py-1 bg-sage-100 hover:bg-sage-200 rounded-lg transition-colors"
+              >
+                Go
+              </button>
+            ) : null}
+          </div>
+        </form>
+
+        {/* Real-time Autocomplete Suggestions Dropdown */}
+        {isInputFocused && suggestions.length > 0 && (
+          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-sage-200 rounded-2xl shadow-zen overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+            <div className="py-1">
+              {suggestions.map((sug, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelectSuggestion(sug)}
+                  className="w-full text-left px-4 py-2.5 text-xs text-charcoal-800 hover:bg-sage-50/80 flex items-center gap-2.5 transition-colors"
+                >
+                  <SearchIcon className="w-3.5 h-3.5 text-charcoal-400 flex-shrink-0" />
+                  <span className="truncate">{sug}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Error Alert */}
+      {errorMessage && (
+        <div className="mb-4 p-3 rounded-xl bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-terracotta-600 flex-shrink-0 mt-0.5" />
+          <p className="font-medium flex-1">{errorMessage}</p>
+        </div>
+      )}
+
+      {/* Search Results */}
       {searchResults.length > 0 ? (
         <div>
-          <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-3 block">
-            Audio Results ({searchResults.length})
-          </span>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 block">
+              Official Songs ({searchResults.length})
+            </span>
+            <span className="text-[10px] text-sage-800 font-medium flex items-center gap-1">
+              <Disc3 className="w-3 h-3 text-sage-700" />
+              YouTube Music
+            </span>
+          </div>
 
           <div className="flex flex-col gap-2.5">
             {searchResults.map((track) => {
@@ -212,32 +246,60 @@ export const SearchView = () => {
                   className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200 border border-sage-100/70 cursor-pointer active:scale-98 transition-all group"
                 >
                   <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 border border-black/5 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 border border-black/5 shadow-sm relative">
                       <img
-                        src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
+                        src={
+                          track.artwork ||
+                          `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`
+                        }
                         alt={track.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           e.target.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
                         }}
                       />
+                      {isThisPlaying && isPlaying && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="w-2 h-2 rounded-full bg-sage-400 animate-ping" />
+                        </div>
+                      )}
                     </div>
 
                     <div className="min-w-0">
+                      {/* Track Title */}
                       <h4
                         className={`text-xs font-medium tracking-tight truncate ${
-                          isThisPlaying ? 'text-sage-800 font-semibold' : 'text-charcoal-900'
+                          isThisPlaying
+                            ? 'text-sage-800 font-semibold'
+                            : 'text-charcoal-900'
                         }`}
                       >
                         {track.title}
                       </h4>
+
+                      {/* Artist Name */}
                       <p className="text-[11px] font-sans text-charcoal-600 truncate mt-0.5">
                         {track.artist}
                       </p>
+
+                      {/* Album / Badges */}
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[9px] font-medium bg-sage-100 text-sage-800 px-1.5 py-0.2 rounded-md">
+                          Studio Audio
+                        </span>
+                        {track.album && (
+                          <span className="text-[9px] text-charcoal-400 truncate max-w-[140px]">
+                            · {track.album}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[10px] font-mono text-charcoal-400 tabular-nums">
+                      {track.duration}
+                    </span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -250,7 +312,11 @@ export const SearchView = () => {
                       }`}
                       aria-label="Play audio"
                     >
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      {isThisPlaying && isPlaying ? (
+                        <Pause className="w-3.5 h-3.5 fill-current" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -259,81 +325,37 @@ export const SearchView = () => {
           </div>
         </div>
       ) : (
-        /* When search is empty: Show Recently Played songs only (no generic suggestions) */
-        <div>
-          <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-3 flex items-center gap-1.5">
-            <Clock className="w-3 h-3" />
-            <span>Recently Played</span>
-          </span>
+        /* Minimal Empty State with Quick Picks */
+        <div className="text-center py-12 px-4">
+          <div className="w-14 h-14 rounded-2xl bg-sage-100/60 flex items-center justify-center mx-auto mb-3.5 text-sage-700">
+            <SearchIcon className="w-6 h-6 stroke-[1.75]" />
+          </div>
+          <h3 className="font-serif text-lg font-medium text-charcoal-900 mb-6">
+            Search Music
+          </h3>
 
-          {recentlyPlayed.length === 0 ? (
-            <div className="text-center py-10 bg-parchment-50/50 rounded-2xl border border-dashed border-sage-200">
-              <Music2 className="w-7 h-7 text-sage-600/40 mx-auto mb-2" />
-              <p className="text-xs text-charcoal-600 font-sans">
-                Type an artist or song name above to find clean studio audio.
-              </p>
+          {/* Quick Discover Chips */}
+          <div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-2.5 block">
+              Suggested Artists
+            </span>
+            <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
+              {quickPicks.map((pick) => (
+                <button
+                  key={pick}
+                  onClick={() => {
+                    setQuery(pick);
+                    executeSearch(pick);
+                  }}
+                  className="text-xs font-sans px-3 py-1.5 rounded-full bg-parchment-200/80 hover:bg-sage-100 hover:text-sage-900 text-charcoal-700 border border-sage-100/80 transition-all active:scale-95"
+                >
+                  {pick}
+                </button>
+              ))}
             </div>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              {recentlyPlayed.slice(0, 8).map((track) => {
-                const isThisPlaying =
-                  (currentTrack?.id || currentTrack?.idYoutube) ===
-                  (track.id || track.idYoutube);
-
-                return (
-                  <div
-                    key={track.id || track.idYoutube}
-                    onClick={() => playTrack(track, recentlyPlayed)}
-                    className="flex items-center justify-between p-2.5 rounded-2xl bg-parchment-50/70 hover:bg-parchment-200/80 border border-sage-100/60 cursor-pointer active:scale-98 transition-all group"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                      <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-charcoal-800 border border-black/5 shadow-sm">
-                        <img
-                          src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
-                          alt={track.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.target.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
-                          }}
-                        />
-                      </div>
-
-                      <div className="min-w-0">
-                        <h4
-                          className={`text-xs font-medium tracking-tight truncate ${
-                            isThisPlaying ? 'text-sage-800 font-semibold' : 'text-charcoal-900'
-                          }`}
-                        >
-                          {track.title}
-                        </h4>
-                        <p className="text-[11px] font-sans text-charcoal-600 truncate mt-0.5">
-                          {track.artist}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        playTrack(track, recentlyPlayed);
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
-                        isThisPlaying && isPlaying
-                          ? 'bg-sage-700 text-white'
-                          : 'bg-parchment-200 text-charcoal-800 group-hover:bg-sage-700 group-hover:text-white'
-                      }`}
-                      aria-label="Play track"
-                    >
-                      <Play className="w-3 h-3 fill-current ml-0.5" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          </div>
         </div>
       )}
-
     </div>
   );
 };

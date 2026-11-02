@@ -1,0 +1,103 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+def versionPropsFile = file('version.properties')
+def buildVersionCode = 1
+def buildVersionName = "1.0.0"
+
+if (versionPropsFile.canRead()) {
+    Properties versionProps = new Properties()
+    versionProps.load(new FileInputStream(versionPropsFile))
+    buildVersionCode = versionProps['VERSION_CODE'] ? versionProps['VERSION_CODE'].toInteger() : 1
+    buildVersionName = versionProps['VERSION_NAME'] ?: "1.0.0"
+}
+
+android {
+    namespace = "com.sora.audio"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.sora.audio"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode buildVersionCode
+        versionName buildVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (file("sora-release.keystore").exists()) {
+                storeFile file("sora-release.keystore")
+                storePassword System.getenv("SORA_KEYSTORE_PASSWORD") ?: "sora_audio_release_key"
+                keyAlias System.getenv("SORA_KEY_ALIAS") ?: "sora"
+                keyPassword System.getenv("SORA_KEY_PASSWORD") ?: "sora_audio_release_key"
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (file("sora-release.keystore").exists()) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+task incrementVersion {
+    doLast {
+        if (versionPropsFile.canRead()) {
+            Properties versionProps = new Properties()
+            versionProps.load(new FileInputStream(versionPropsFile))
+            int nextCode = versionProps['VERSION_CODE'].toInteger() + 1
+            versionProps['VERSION_CODE'] = nextCode.toString()
+            versionProps.store(versionPropsFile.newWriter(), null)
+            println("Auto-incremented versionCode to: " + nextCode)
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+
+    // AndroidX Media3 (ExoPlayer & MediaSessionService for Background Playback)
+    def media3Version = "1.3.1"
+    implementation "androidx.media3:media3-exoplayer:$media3Version"
+    implementation "androidx.media3:media3-session:$media3Version"
+    implementation "androidx.media3:media3-ui:$media3Version"
+    implementation "androidx.media3:media3-common:$media3Version"
+    implementation "androidx.media3:media3-datasource:$media3Version"
+
+    // Kotlin Coroutines for async events and stream timeouts
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0"
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+.env*.local
+
+# Android build outputs & caches
+android/.gradle/
+android/app/build/
+android/build/
+android/.idea/
+android/*.iml
+android/app/*.iml
+local.properties
+.cxx/
+*.keystore
+!sora-release.keystore

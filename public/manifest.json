@@ -8,6 +8,7 @@
   "orientation": "portrait",
   "background_color": "#F7F4EE",
   "theme_color": "#F7F4EE",
+  "categories": ["music", "audio", "entertainment"],
   "icons": [
     {
       "src": "./favicon.svg",

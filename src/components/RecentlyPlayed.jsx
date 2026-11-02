@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Play, Pause, MoreHorizontal, ChevronRight, Heart, Share2, Loader2, Music2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 
-export const RecentlyPlayed = ({ onOpenAll }) => {
+export const RecentlyPlayed = ({ onOpenAll, onOpenSearch }) => {
   const {
     currentTrack,
     isPlaying,
@@ -47,11 +47,22 @@ export const RecentlyPlayed = ({ onOpenAll }) => {
 
       {/* Track List */}
       {recentlyPlayed.length === 0 ? (
-        <div className="text-center py-12 bg-parchment-50/70 rounded-3xl border border-dashed border-sage-200">
-          <Music2 className="w-8 h-8 text-sage-600/50 mx-auto mb-2" />
-          <p className="text-xs text-charcoal-600 font-sans">
-            No recently played tracks yet. Search for a song to start listening.
+        <div className="text-center py-14 px-4 bg-parchment-50/70 rounded-3xl border border-dashed border-sage-200">
+          <Music2 className="w-8 h-8 text-sage-600/50 mx-auto mb-2.5" />
+          <h4 className="text-sm font-serif font-medium text-charcoal-900 mb-1">
+            Your space is quiet
+          </h4>
+          <p className="text-xs text-charcoal-600 font-sans max-w-[240px] mx-auto mb-4">
+            Search for an artist or song to start listening. Your recently played tracks will appear here.
           </p>
+          {onOpenSearch && (
+            <button
+              onClick={onOpenSearch}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-sage-700 hover:bg-sage-800 text-white text-xs font-sans font-medium rounded-xl shadow-sm transition-colors active:scale-95"
+            >
+              <span>Search Music</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">

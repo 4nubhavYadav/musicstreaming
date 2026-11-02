@@ -3,7 +3,7 @@ import { Moon, X, Check } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 
 export const SleepTimerModal = ({ isOpen, onClose }) => {
-  const { sleepTimerMinutes, sleepTimerSecondsLeft, startSleepTimer } = usePlayer();
+  const { sleepTimerMinutes, startSleepTimer } = usePlayer();
 
   if (!isOpen) return null;
 

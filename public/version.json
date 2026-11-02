@@ -1,0 +1,6 @@
+{
+  "versionCode": 1,
+  "versionName": "1.0.0",
+  "apkUrl": "https://github.com/anubhav28yadav/sora-audio/releases/latest/download/sora-release.apk",
+  "notes": "Initial release with native Android background audio playback, ExoPlayer engine, and notification controls."
+}
