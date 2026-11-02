@@ -18,6 +18,7 @@ import {
   getNextContinuation,
   getRelated,
   parseMusicItem,
+  resolveAlternatePlayableId,
   INNERTUBE_CLIENT
 } from './innertubeService.js';
 
@@ -84,5 +85,6 @@ export {
   getNextContinuation,
   getRelated,
   parseMusicItem,
+  resolveAlternatePlayableId,
   INNERTUBE_CLIENT
 };

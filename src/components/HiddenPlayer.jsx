@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { usePlayer } from '../context/PlayerContext';
+import { resolveAlternatePlayableId } from '../services/musicService';
 
 export const HiddenPlayer = () => {
   const {
@@ -26,6 +27,12 @@ export const HiddenPlayer = () => {
   const onTrackEndedFnRef = useRef(onTrackEnded);
   const restartTrackFnRef = useRef(restartCurrentTrack);
   const loopTriggeredRef = useRef(false);
+  const currentTrackRef = useRef(currentTrack);
+  const retriedTracksRef = useRef(new Set());
+
+  useEffect(() => {
+    currentTrackRef.current = currentTrack;
+  }, [currentTrack]);
 
   useEffect(() => {
     nextTrackFnRef.current = nextTrack;
@@ -52,7 +59,7 @@ export const HiddenPlayer = () => {
           width: '240',
           videoId: defaultId,
           playerVars: {
-            autoplay: 0,
+            autoplay: 1,
             controls: 0,
             disablekb: 1,
             enablejsapi: 1,
@@ -105,12 +112,40 @@ export const HiddenPlayer = () => {
                 }
               }
             },
-            onError: (err) => {
+            onError: async (err) => {
               console.warn('YouTube Player Event Notice:', err);
               setIsBuffering(false);
-              setTimeout(() => {
-                nextTrackFnRef.current();
-              }, 1200);
+
+              const currentT = currentTrackRef.current;
+              const currentVid = currentT?.idYoutube || currentT?.id;
+
+              // If Error 150 / 101 (embed restricted) or 100/2, attempt smart alternate resolution
+              if (currentT && currentVid && !retriedTracksRef.current.has(currentVid)) {
+                retriedTracksRef.current.add(currentVid);
+                try {
+                  const altId = await resolveAlternatePlayableId(currentT);
+                  if (altId && altId !== currentVid && playerRef.current && playerRef.current.loadVideoById) {
+                    currentT.idYoutube = altId;
+                    try {
+                      playerRef.current.loadVideoById(altId, 0);
+                    } catch {
+                      playerRef.current.loadVideoById({ videoId: altId, startSeconds: 0 });
+                    }
+                    if (playerRef.current.playVideo) {
+                      playerRef.current.playVideo();
+                    }
+                    setIsBuffering(true);
+                    return;
+                  }
+                } catch (e) {
+                  console.warn('[HiddenPlayer] Alternate resolution notice:', e);
+                }
+              }
+
+              // If alternate resolution was not available or also failed:
+              // Stop cleanly without blindly skipping through the queue into a stuck state.
+              setIsPlaying(false);
+              setIsBuffering(false);
             }
           }
         });
@@ -189,13 +224,15 @@ export const HiddenPlayer = () => {
       style={{
         position: 'fixed',
         bottom: 0,
-        right: 0,
-        width: '240px',
-        height: '160px',
-        opacity: 0.001,
+        left: 0,
+        width: '1px',
+        height: '1px',
+        opacity: 1, // Full opacity prevents browser background execution throttling
         pointerEvents: 'none',
-        zIndex: -999,
-        overflow: 'hidden'
+        zIndex: 0,
+        overflow: 'hidden',
+        clip: 'rect(0, 0, 0, 0)',
+        clipPath: 'inset(50%)'
       }}
       aria-hidden="true"
     >

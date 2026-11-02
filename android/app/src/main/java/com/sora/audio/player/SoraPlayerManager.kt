@@ -41,6 +41,7 @@ class SoraPlayerManager(private val context: Context) : Player.Listener {
 
     private var positionTimerJob: Job? = null
     private var lastEmittedPositionMs = 0L
+    private var consecutiveErrors = 0
 
     init {
         val httpDataSourceFactory = StreamUrlManager.createHttpDataSourceFactory(context)
@@ -190,6 +191,7 @@ class SoraPlayerManager(private val context: Context) : Player.Listener {
         onStateChanged?.invoke(stateStr, isPlaying)
 
         if (isPlaying) {
+            consecutiveErrors = 0
             startPositionTimer()
         } else {
             stopPositionTimer()
@@ -200,8 +202,9 @@ class SoraPlayerManager(private val context: Context) : Player.Listener {
         val msg = error.message ?: "Playback error"
         onError?.invoke(msg)
 
-        // Skip-on-failure behavior
-        if (player.hasNextMediaItem()) {
+        consecutiveErrors++
+        // Skip once on error to try recovering, but do not loop endlessly through queue
+        if (consecutiveErrors <= 1 && player.hasNextMediaItem()) {
             mainHandler.postDelayed({
                 try {
                     player.seekToNextMediaItem()
@@ -209,6 +212,12 @@ class SoraPlayerManager(private val context: Context) : Player.Listener {
                     // ignore
                 }
             }, 1000L)
+        } else {
+            try {
+                player.pause()
+            } catch (e: Exception) {
+                // ignore
+            }
         }
     }
 

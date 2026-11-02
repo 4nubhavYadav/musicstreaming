@@ -779,3 +779,65 @@ export async function getUpNextTracks(videoId) {
   const result = await getRadioQueue(videoId);
   return result.tracks;
 }
+
+/**
+ * Resolves an alternate playable YouTube video ID for tracks with embed restrictions (Error 150/101)
+ * Searches general catalog without the strict Songs filter to find official music video / lyric video alternatives.
+ */
+export async function resolveAlternatePlayableId(track) {
+  if (!track || !track.title) return null;
+
+  const currentId = track.idYoutube || track.id;
+  const cacheKey = `alt_${currentId}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const cleanTitle = (track.title || '').replace(/\(.*?\)|\/.*$/g, '').trim();
+  const cleanArtist = (track.artist || '').replace(/\(.*?\)|\/.*$/g, '').trim();
+  const query = `${cleanTitle} ${cleanArtist}`.trim();
+
+  try {
+    const data = await callInnerTube('search', { query });
+    const contents =
+      data.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer
+        ?.content?.sectionListRenderer?.contents || [];
+
+    for (const section of contents) {
+      // 1. Check card shelf
+      if (section.musicCardShelfRenderer) {
+        const card = section.musicCardShelfRenderer;
+        const vid =
+          card.onTap?.watchEndpoint?.videoId ||
+          card.buttons?.[0]?.musicPlayButtonRenderer?.playNavigationEndpoint
+            ?.watchEndpoint?.videoId;
+        if (vid && vid !== currentId) {
+          setCached(cacheKey, vid);
+          return vid;
+        }
+      }
+
+      // 2. Check general music shelf
+      if (section.musicShelfRenderer?.contents) {
+        for (const item of section.musicShelfRenderer.contents) {
+          const r = item.musicResponsiveListItemRenderer;
+          const vid =
+            r?.overlay?.musicItemThumbnailOverlayRenderer?.content
+              ?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint
+              ?.videoId ||
+            r?.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text
+              ?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId;
+
+          if (vid && vid !== currentId) {
+            setCached(cacheKey, vid);
+            return vid;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[InnerTune] resolveAlternatePlayableId notice:', err.message);
+  }
+
+  return null;
+}
+

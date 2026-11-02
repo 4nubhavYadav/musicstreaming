@@ -235,6 +235,29 @@ export const PlayerProvider = ({ children }) => {
 
     const videoId = targetTrack.idYoutube || targetTrack.id;
 
+    // Immediate fast path: trigger audio load & play synchronously inside user touch/click event
+    if (!isNativeRef.current) {
+      activeEngineRef.current = 'yt';
+      if (ytPlayerRef.current && (ytPlayerRef.current.loadVideoById || ytPlayerRef.current.cueVideoById)) {
+        try {
+          if (typeof ytPlayerRef.current.loadVideoById === 'function') {
+            try {
+              ytPlayerRef.current.loadVideoById(videoId, 0);
+            } catch {
+              ytPlayerRef.current.loadVideoById({ videoId, startSeconds: 0 });
+            }
+          }
+          if (typeof ytPlayerRef.current.playVideo === 'function') {
+            ytPlayerRef.current.playVideo();
+          }
+        } catch (err) {
+          console.warn('Fast-path YT Player launch notice:', err);
+        }
+      } else {
+        pendingTrackRef.current = targetTrack;
+      }
+    }
+
     // Update Recently Played (deduplicate and keep up to 50)
     setRecentlyPlayed((prev) => {
       const filtered = prev.filter(
@@ -266,6 +289,7 @@ export const PlayerProvider = ({ children }) => {
     setCurrentTrack(targetTrack);
     setCurrentTime(0);
     setIsBuffering(true);
+    setIsPlaying(true);
 
     // Record listening history (Phase 2)
     recordTrackStart(targetTrack);
@@ -346,30 +370,6 @@ export const PlayerProvider = ({ children }) => {
       nativeSetQueue(queueToSend, startIdx !== -1 ? startIdx : 0);
       setIsPlaying(true);
       return;
-    }
-
-    // Direct playback via YouTube IFrame player
-    activeEngineRef.current = 'yt';
-    if (ytPlayerRef.current && (ytPlayerRef.current.loadVideoById || ytPlayerRef.current.cueVideoById)) {
-      try {
-        if (typeof ytPlayerRef.current.loadVideoById === 'function') {
-          try {
-            ytPlayerRef.current.loadVideoById(videoId, 0);
-          } catch {
-            ytPlayerRef.current.loadVideoById({ videoId, startSeconds: 0 });
-          }
-        }
-        if (typeof ytPlayerRef.current.playVideo === 'function') {
-          ytPlayerRef.current.playVideo();
-        }
-        setIsPlaying(true);
-        setIsBuffering(false);
-      } catch (err) {
-        console.warn('Error loading video in YT Player:', err);
-      }
-    } else {
-      pendingTrackRef.current = targetTrack;
-      setIsPlaying(true);
     }
   };
 
