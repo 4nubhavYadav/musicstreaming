@@ -42,8 +42,9 @@ class SoraPlayerPlugin : Plugin() {
 
         // Request notification permissions on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (!hasPermission("notifications")) {
-                requestPermissionForAlias("notifications", null, "notificationPermsCallback")
+            val act = activity
+            if (act != null && androidx.core.content.ContextCompat.checkSelfPermission(act, Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(act, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
             }
         }
 
