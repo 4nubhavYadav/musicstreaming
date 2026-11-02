@@ -3,11 +3,25 @@
 @tailwind utilities;
 
 @layer base {
+  *, *::before, *::after {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     background-color: #000000;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
   }
 
   body {
@@ -17,16 +31,27 @@
     background-size: 24px 24px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
   }
 }
 
 /* Custom Zen Scrollbars (Hidden for mobile app feel) */
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Safe area padding for notches and gesture bars */

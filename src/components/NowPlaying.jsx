@@ -57,8 +57,8 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
   };
 
   const activeTime = dragTime !== null ? dragTime : currentTime;
-  const progressPercent = duration > 0 ? (activeTime / duration) * 100 : 0;
   const posterUrl = currentTrack?.artwork || `https://i.ytimg.com/vi/${currentTrack?.id || 'mehLx_Fjv_c'}/hqdefault.jpg`;
+  const liked = isLiked ? isLiked(currentTrack?.id) : false;
 
   const handleSeekChange = (e) => {
     isSeekingRef.current = true;
@@ -73,51 +73,104 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between pt-safe pb-safe px-6 sm:px-7 max-w-md mx-auto animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-3xl flex flex-col justify-between pt-safe pb-safe px-6 sm:px-8 max-w-md mx-auto animate-in slide-in-from-bottom duration-300 select-none">
       
       {/* Toast for Loop status */}
       {loopToast && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-parchment-200 text-charcoal-900 border border-white/10 px-4 py-1.5 rounded-full text-xs font-sans font-medium shadow-zen animate-in fade-in zoom-in duration-150">
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-50 bg-parchment-200/90 backdrop-blur-md text-charcoal-900 border border-white/10 px-4 py-1.5 rounded-full text-xs font-sans font-medium shadow-zen animate-in fade-in zoom-in duration-150">
           {loopToast}
         </div>
       )}
 
-      {/* Top Bar: Progress Line, Collapse & Options */}
-      <div>
-        <div className="w-full bg-parchment-200 h-1 rounded-full overflow-hidden mt-2 mb-3">
-          <div
-            className="bg-sage-700 h-full rounded-full transition-all duration-200"
-            style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
-          />
-        </div>
-
+      {/* Top Header Bar */}
+      <div className="pt-2">
         <div className="flex items-center justify-between">
           <button
             onClick={onClose}
-            className="p-2 text-charcoal-400 hover:text-charcoal-900 rounded-full active:bg-parchment-200 transition-colors"
+            className="p-2 -ml-2 text-charcoal-400 hover:text-charcoal-900 rounded-full active:scale-90 transition-all"
             aria-label="Collapse player"
           >
-            <ChevronDown className="w-6 h-6" />
+            <ChevronDown className="w-5 h-5" />
           </button>
 
-          {/* Mode Switcher: Song | Up Next | Related */}
-          <div className="flex items-center bg-parchment-50 p-1 rounded-xl border border-white/10 text-[11px] font-sans">
+          {/* Minimal Status Label */}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-sans font-medium tracking-[0.22em] text-charcoal-500 uppercase">
+              Now Playing
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 relative">
+            {/* Quick Sleep Timer Indicator */}
+            <button
+              onClick={onOpenSleepTimer}
+              className={`p-2 rounded-full transition-all active:scale-90 flex items-center gap-1 ${
+                sleepTimerSecondsLeft
+                  ? 'text-terracotta-400 font-medium'
+                  : 'text-charcoal-400 hover:text-charcoal-900'
+              }`}
+              aria-label="Sleep timer"
+            >
+              <Moon className="w-4 h-4" />
+              {sleepTimerSecondsLeft && (
+                <span className="text-[10px] font-sans tabular-nums">
+                  {Math.ceil(sleepTimerSecondsLeft / 60)}m
+                </span>
+              )}
+            </button>
+
+            {/* More Options */}
+            <button
+              onClick={() => setShowMenu(prev => !prev)}
+              className="p-2 -mr-2 text-charcoal-400 hover:text-charcoal-900 rounded-full active:scale-90 transition-all"
+              aria-label="Options"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+
+            {showMenu && (
+              <div 
+                className="absolute right-0 top-10 bg-parchment-50 border border-white/10 rounded-2xl shadow-zen p-1.5 min-w-[170px] z-30 text-xs font-sans text-charcoal-800 animate-in fade-in zoom-in-95 duration-150"
+                onClick={() => setShowMenu(false)}
+              >
+                <button
+                  onClick={onOpenSleepTimer}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-parchment-200 text-left transition-colors"
+                >
+                  <Moon className="w-4 h-4 text-charcoal-400" />
+                  <span>Zen Sleep Timer</span>
+                </button>
+                <button
+                  onClick={() => toggleLike(currentTrack?.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-parchment-200 text-left transition-colors"
+                >
+                  <Heart className={`w-4 h-4 ${liked ? 'fill-terracotta-400 text-terracotta-400' : 'text-charcoal-400'}`} />
+                  <span>{liked ? 'Remove Favorite' : 'Add to Favorites'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Minimal Mode Pill Switcher: Track | Up Next | Related */}
+        <div className="flex justify-center mt-3 mb-1">
+          <div className="flex items-center p-1 bg-parchment-50/80 rounded-full border border-white/5 text-[11px] font-sans">
             <button
               onClick={() => setViewMode('track')}
-              className={`px-3 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3.5 py-1 rounded-full font-medium transition-all ${
                 viewMode === 'track'
-                  ? 'bg-parchment-200 text-charcoal-900 font-semibold shadow-sm border border-white/10'
-                  : 'text-charcoal-400 hover:text-charcoal-800'
+                  ? 'bg-parchment-200 text-charcoal-900 font-semibold shadow-sm'
+                  : 'text-charcoal-500 hover:text-charcoal-800'
               }`}
             >
-              Song
+              Track
             </button>
             <button
               onClick={() => setViewMode('queue')}
-              className={`px-3 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
+              className={`px-3.5 py-1 rounded-full font-medium transition-all flex items-center gap-1 ${
                 viewMode === 'queue'
-                  ? 'bg-parchment-200 text-charcoal-900 font-semibold shadow-sm border border-white/10'
-                  : 'text-charcoal-400 hover:text-charcoal-800'
+                  ? 'bg-parchment-200 text-charcoal-900 font-semibold shadow-sm'
+                  : 'text-charcoal-500 hover:text-charcoal-800'
               }`}
             >
               <span>Up Next</span>
@@ -127,75 +180,50 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             </button>
             <button
               onClick={() => setViewMode('related')}
-              className={`px-3 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3.5 py-1 rounded-full font-medium transition-all ${
                 viewMode === 'related'
-                  ? 'bg-parchment-200 text-charcoal-900 font-semibold shadow-sm border border-white/10'
-                  : 'text-charcoal-400 hover:text-charcoal-800'
+                  ? 'bg-parchment-200 text-charcoal-900 font-semibold shadow-sm'
+                  : 'text-charcoal-500 hover:text-charcoal-800'
               }`}
             >
               Related
             </button>
           </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(prev => !prev)}
-              className="p-2 text-charcoal-400 hover:text-charcoal-900 rounded-full active:bg-parchment-200 transition-colors"
-              aria-label="Options"
-            >
-              <MoreHorizontal className="w-6 h-6" />
-            </button>
-
-            {showMenu && (
-              <div 
-                className="absolute right-0 top-10 bg-parchment-50 border border-white/10 rounded-2xl shadow-zen p-2 min-w-[170px] z-20 text-xs font-sans text-charcoal-800"
-                onClick={() => setShowMenu(false)}
-              >
-                <button
-                  onClick={onOpenSleepTimer}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-parchment-200 text-left"
-                >
-                  <Moon className="w-4 h-4 text-charcoal-400" />
-                  <span>Zen Sleep Timer</span>
-                </button>
-                <button
-                  onClick={() => toggleLike(currentTrack?.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-parchment-200 text-left"
-                >
-                  <Heart className={`w-4 h-4 ${isLiked(currentTrack?.id) ? 'fill-terracotta-400 text-terracotta-400' : 'text-charcoal-400'}`} />
-                  <span>{isLiked(currentTrack?.id) ? 'Favorited' : 'Add to Favorites'}</span>
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       {/* Main Body: Track View OR Up Next Queue OR Related Shelves */}
-      <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+      <div className="flex-1 overflow-y-auto no-scrollbar py-2 min-h-0 flex flex-col justify-center">
         {viewMode === 'track' && (
-          <div className="h-full flex flex-col justify-center items-center py-2 animate-in fade-in duration-200">
-            <div className="w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] rounded-3xl overflow-hidden shadow-zen border border-white/10 relative group bg-black">
-              <img
-                src={posterUrl}
-                alt={currentTrack?.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-102"
-                onError={(e) => {
-                  e.target.src = `https://i.ytimg.com/vi/${currentTrack?.id || 'mehLx_Fjv_c'}/hqdefault.jpg`;
-                }}
+          <div className="flex flex-col justify-center items-center py-2 animate-in fade-in duration-200">
+            {/* Artwork with subtle atmospheric glow */}
+            <div className="relative">
+              <div 
+                className="absolute inset-0 bg-cover bg-center rounded-3xl blur-2xl opacity-20 scale-95 pointer-events-none transition-all duration-700"
+                style={{ backgroundImage: `url(${posterUrl})` }}
               />
+              <div className="w-[230px] h-[230px] sm:w-[270px] sm:h-[270px] aspect-square rounded-3xl overflow-hidden shadow-2xl border border-white/10 relative group bg-parchment-50 z-10">
+                <img
+                  src={posterUrl}
+                  alt={currentTrack?.title}
+                  className={`w-full h-full object-cover transition-transform duration-700 ${isPlaying ? 'scale-102' : 'group-hover:scale-105'}`}
+                  onError={(e) => {
+                    e.target.src = `https://i.ytimg.com/vi/${currentTrack?.id || 'mehLx_Fjv_c'}/hqdefault.jpg`;
+                  }}
+                />
+              </div>
             </div>
 
             {/* Title & Artist */}
-            <div className="text-center mt-6 mb-2 px-4 max-w-xs">
-              <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-charcoal-900 tracking-tight leading-tight truncate">
-                {currentTrack?.title || 'A Walk'}
+            <div className="w-full max-w-xs text-center mt-5 mb-1 px-3 z-10">
+              <h2 className="font-serif text-xl sm:text-2xl font-semibold text-charcoal-900 tracking-tight leading-snug truncate">
+                {currentTrack?.title || 'Unknown Title'}
               </h2>
-              <p className="font-sans text-sm sm:text-base text-charcoal-500 font-normal mt-1 tracking-wide truncate">
-                {currentTrack?.artist || 'Tycho'}
+              <p className="font-sans text-xs sm:text-sm text-charcoal-500 font-normal tracking-wide mt-1 truncate">
+                {currentTrack?.artist || 'Unknown Artist'}
               </p>
               {currentTrack?.album && (
-                <p className="text-[11px] font-sans text-charcoal-400 mt-0.5 truncate">
+                <p className="text-[10px] font-sans text-charcoal-400/70 mt-0.5 truncate">
                   {currentTrack.album}
                 </p>
               )}
@@ -204,8 +232,8 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
         )}
 
         {viewMode === 'queue' && (
-          <div className="py-2 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between mb-3 px-1">
+          <div className="h-full py-2 animate-in fade-in duration-200 flex flex-col">
+            <div className="flex items-center justify-between mb-2.5 px-1">
               <span className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400">
                 Playing Queue ({queue.length})
               </span>
@@ -214,7 +242,7 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
               </span>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-1.5 pr-0.5">
               {queue.map((track, idx) => {
                 const isCurrent = idx === queueIndex;
                 return (
@@ -224,11 +252,11 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
                     className={`flex items-center justify-between p-2 rounded-2xl cursor-pointer transition-all border ${
                       isCurrent
                         ? 'bg-parchment-200 border-white/20 shadow-sm'
-                        : 'bg-parchment-50/80 hover:bg-parchment-200 border-white/5'
+                        : 'bg-parchment-50/70 hover:bg-parchment-200 border-white/5'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10 relative">
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10 relative">
                         <img
                           src={track.artwork || `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`}
                           alt={track.title}
@@ -244,10 +272,10 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className={`text-xs font-medium truncate ${isCurrent ? 'text-charcoal-900 font-semibold' : 'text-charcoal-800'}`}>
+                        <p className={`text-xs font-serif truncate ${isCurrent ? 'text-charcoal-900 font-semibold' : 'text-charcoal-800'}`}>
                           {track.title}
                         </p>
-                        <p className="text-[11px] font-sans text-charcoal-500 truncate mt-0.5">
+                        <p className="text-[10px] font-sans text-charcoal-500 truncate mt-0.5">
                           {track.artist}
                         </p>
                       </div>
@@ -263,20 +291,20 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
         )}
 
         {viewMode === 'related' && (
-          <div className="py-2 animate-in fade-in duration-200">
+          <div className="h-full py-2 animate-in fade-in duration-200 flex flex-col overflow-y-auto no-scrollbar">
             {isLoadingRelated ? (
-              <div className="py-12 text-center text-charcoal-500 flex flex-col items-center gap-2">
+              <div className="py-12 text-center text-charcoal-500 flex flex-col items-center gap-2 my-auto">
                 <Loader2 className="w-5 h-5 animate-spin text-charcoal-400" />
                 <span className="text-xs font-sans">Discovering related music...</span>
               </div>
             ) : relatedData?.sections && relatedData.sections.length > 0 ? (
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4">
                 {relatedData.sections.map((sec, sIdx) => (
-                  <div key={sIdx} className="space-y-2">
-                    <h3 className="font-serif text-sm font-semibold text-charcoal-900 px-1">
+                  <div key={sIdx} className="space-y-1.5">
+                    <h3 className="font-serif text-xs font-semibold text-charcoal-900 px-1">
                       {sec.title}
                     </h3>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1.5">
                       {sec.items.slice(0, 6).map((item, iIdx) => (
                         <div
                           key={iIdx}
@@ -285,10 +313,10 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
                               playTrack(item);
                             }
                           }}
-                          className="flex items-center justify-between p-2 rounded-2xl bg-parchment-50/80 hover:bg-parchment-200 border border-white/5 cursor-pointer transition-all"
+                          className="flex items-center justify-between p-2 rounded-2xl bg-parchment-50/70 hover:bg-parchment-200 border border-white/5 cursor-pointer transition-all"
                         >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10">
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/10">
                               <img
                                 src={item.artwork || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
                                 alt={item.title}
@@ -299,20 +327,20 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
                               />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-medium text-charcoal-900 truncate">
+                              <p className="text-xs font-serif font-medium text-charcoal-900 truncate">
                                 {item.title}
                               </p>
-                              <p className="text-[11px] font-sans text-charcoal-500 truncate mt-0.5">
+                              <p className="text-[10px] font-sans text-charcoal-500 truncate mt-0.5">
                                 {item.artist}
                               </p>
                             </div>
                           </div>
                           {item.id && (
                             <button
-                              className="w-8 h-8 rounded-full bg-sage-700 text-black flex items-center justify-center shadow-sm flex-shrink-0 active:scale-95"
+                              className="w-7 h-7 rounded-full bg-sage-700 text-black flex items-center justify-center shadow-sm flex-shrink-0 active:scale-95"
                               aria-label="Play track"
                             >
-                              <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+                              <Play className="w-3 h-3 fill-black ml-0.5" />
                             </button>
                           )}
                         </div>
@@ -322,8 +350,8 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
                 ))}
               </div>
             ) : (
-              <div className="py-12 text-center text-charcoal-500">
-                <Music2 className="w-8 h-8 text-charcoal-400/50 mx-auto mb-2" />
+              <div className="py-12 text-center text-charcoal-500 my-auto">
+                <Music2 className="w-7 h-7 text-charcoal-400/50 mx-auto mb-2" />
                 <p className="text-xs font-sans">No related recommendations for this track.</p>
               </div>
             )}
@@ -332,9 +360,9 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
       </div>
 
       {/* Bottom Controls Section */}
-      <div className="pb-6 pt-2">
+      <div className="pb-5 pt-2">
         {/* Scrubber Bar */}
-        <div className="mb-5">
+        <div className="mb-4 px-1">
           <div className="relative flex items-center">
             <input
               type="range"
@@ -349,33 +377,33 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
               aria-label="Track progress"
             />
           </div>
-          <div className="flex justify-between text-[11px] font-sans text-charcoal-400 mt-1.5 tabular-nums">
+          <div className="flex justify-between text-[10px] font-mono text-charcoal-400 mt-1 tabular-nums">
             <span>{formatTime(activeTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* Primary Controls: Prev, Large Play/Pause Disc, Next */}
-        <div className="flex items-center justify-center gap-10 mb-6">
+        <div className="flex items-center justify-center gap-8 mb-4">
           <button
             onClick={prevTrack}
             className="text-charcoal-400 hover:text-charcoal-900 active:scale-90 transition-transform p-2"
             aria-label="Previous track"
           >
-            <SkipBack className="w-8 h-8 fill-current stroke-none" />
+            <SkipBack className="w-7 h-7 fill-current stroke-none" />
           </button>
 
           <button
             onClick={togglePlayPause}
-            className="w-20 h-20 rounded-full bg-sage-700 hover:bg-sage-800 text-black flex items-center justify-center shadow-zen active:scale-95 transition-all"
+            className="w-16 h-16 rounded-full bg-sage-700 hover:bg-sage-800 text-black flex items-center justify-center shadow-zen active:scale-95 transition-all"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isBuffering ? (
-              <Loader2 className="w-8 h-8 animate-spin text-black" />
+              <Loader2 className="w-7 h-7 animate-spin text-black" />
             ) : isPlaying ? (
-              <Pause className="w-8 h-8 fill-black stroke-none" />
+              <Pause className="w-7 h-7 fill-black stroke-none" />
             ) : (
-              <Play className="w-8 h-8 fill-black stroke-none ml-1" />
+              <Play className="w-7 h-7 fill-black stroke-none ml-0.5" />
             )}
           </button>
 
@@ -384,12 +412,12 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             className="text-charcoal-400 hover:text-charcoal-900 active:scale-90 transition-transform p-2"
             aria-label="Next track"
           >
-            <SkipForward className="w-8 h-8 fill-current stroke-none" />
+            <SkipForward className="w-7 h-7 fill-current stroke-none" />
           </button>
         </div>
 
         {/* Secondary Row: Shuffle, Sleep indicator, Heart, Loop */}
-        <div className="flex items-center justify-between px-6 text-charcoal-400">
+        <div className="flex items-center justify-between px-5 text-charcoal-400">
           {/* Shuffle Toggle */}
           <button
             onClick={toggleShuffle}
@@ -398,9 +426,9 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             }`}
             aria-label="Toggle shuffle"
           >
-            <Shuffle className="w-5 h-5" />
+            <Shuffle className="w-4 h-4" />
             {isShuffle && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-sage-700" />
+              <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sage-700" />
             )}
           </button>
 
@@ -414,9 +442,9 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             }`}
             aria-label="Sleep timer"
           >
-            <Moon className="w-5 h-5" />
+            <Moon className="w-4 h-4" />
             {sleepTimerSecondsLeft && (
-              <span className="text-[10px] font-sans tabular-nums">
+              <span className="text-[9px] font-sans tabular-nums">
                 {Math.ceil(sleepTimerSecondsLeft / 60)}m
               </span>
             )}
@@ -429,10 +457,8 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             aria-label="Favorite"
           >
             <Heart
-              className={`w-5 h-5 ${
-                isLiked(currentTrack?.id)
-                  ? 'fill-terracotta-400 text-terracotta-400'
-                  : ''
+              className={`w-4 h-4 ${
+                liked ? 'fill-terracotta-400 text-terracotta-400' : ''
               }`}
             />
           </button>
@@ -440,9 +466,9 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
           {/* Working Loop / Repeat Toggle Button */}
           <button
             onClick={cycleRepeat}
-            className={`p-2.5 rounded-full transition-all active:scale-90 relative flex items-center justify-center ${
+            className={`p-2 rounded-full transition-all active:scale-90 relative flex items-center justify-center ${
               repeatMode === 'one'
-                ? 'bg-sage-700 text-black shadow-md ring-2 ring-sage-700/50'
+                ? 'bg-sage-700 text-black shadow-sm ring-1 ring-sage-700/50'
                 : repeatMode === 'all'
                 ? 'bg-parchment-200 text-charcoal-900 border border-white/10 shadow-sm'
                 : 'text-charcoal-400 hover:text-charcoal-800'
@@ -450,12 +476,12 @@ export const NowPlaying = ({ isOpen, onClose, onOpenSleepTimer }) => {
             aria-label={`Loop mode: ${repeatMode}`}
           >
             {repeatMode === 'one' ? (
-              <Repeat1 className="w-5 h-5 stroke-[2.5]" />
+              <Repeat1 className="w-4 h-4 stroke-[2.5]" />
             ) : (
-              <Repeat className={`w-5 h-5 ${repeatMode === 'all' ? 'stroke-[2.5]' : ''}`} />
+              <Repeat className={`w-4 h-4 ${repeatMode === 'all' ? 'stroke-[2.5]' : ''}`} />
             )}
             {repeatMode === 'all' && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-sage-700" />
+              <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sage-700" />
             )}
           </button>
         </div>

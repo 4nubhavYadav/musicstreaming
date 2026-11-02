@@ -16,7 +16,7 @@ import {
   isDirectYoutubeQuery
 } from '../services';
 
-export const SearchView = () => {
+export const SearchView = ({ onFocusChange }) => {
   const { playTrack, currentTrack, isPlaying } = usePlayer();
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -114,12 +114,16 @@ export const SearchView = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
+    document.activeElement?.blur();
+    onFocusChange?.(false);
     executeSearch(query);
   };
 
   const handleSelectSuggestion = (sug) => {
     setQuery(sug);
     setSuggestions([]);
+    document.activeElement?.blur();
+    onFocusChange?.(false);
     executeSearch(sug);
   };
 
@@ -148,10 +152,16 @@ export const SearchView = () => {
           <input
             type="text"
             value={query}
-            onFocus={() => setIsInputFocused(true)}
+            onFocus={() => {
+              setIsInputFocused(true);
+              onFocusChange?.(true);
+            }}
             onBlur={() => {
               // Delay blur so clicks on suggestions register
-              setTimeout(() => setIsInputFocused(false), 200);
+              setTimeout(() => {
+                setIsInputFocused(false);
+                onFocusChange?.(false);
+              }, 250);
             }}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -162,7 +172,7 @@ export const SearchView = () => {
               }
             }}
             placeholder="Search track, artist, or paste YouTube link..."
-            className="w-full bg-parchment-50 border border-white/10 rounded-2xl py-3.5 pl-11 pr-20 text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 shadow-sm transition-all"
+            className="w-full bg-parchment-50 border border-white/10 rounded-2xl py-3.5 pl-11 pr-20 text-base sm:text-xs font-sans text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 shadow-sm transition-all"
           />
           <SearchIcon className="w-4 h-4 text-charcoal-400 absolute left-4 top-1/2 -translate-y-1/2" />
 

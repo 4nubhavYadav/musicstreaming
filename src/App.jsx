@@ -18,6 +18,8 @@ function MainApp() {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const { isNowPlayingOpen, closeNowPlaying } = usePlayer();
 
@@ -36,6 +38,19 @@ function MainApp() {
     });
   }, []);
 
+  // Listen to visualViewport resize to detect mobile virtual keyboard
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const handleResize = () => {
+      const isShrunk = window.visualViewport.height < window.innerHeight - 130;
+      setIsKeyboardOpen(isShrunk);
+    };
+    window.visualViewport.addEventListener('resize', handleResize);
+    return () => window.visualViewport.removeEventListener('resize', handleResize);
+  }, []);
+
+  const shouldHideFloatingBars = isSearchFocused || isKeyboardOpen;
+
   const handleStartUpdate = async () => {
     if (!updateInfo?.apkUrl || isDownloading) return;
     setIsDownloading(true);
@@ -53,9 +68,9 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex justify-center items-center sm:p-4">
-      {/* Mobile Frame Container */}
-      <div className="w-full max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[896px] sm:rounded-[44px] bg-black shadow-2xl relative overflow-hidden flex flex-col border border-white/10">
+    <div className="h-full w-full bg-black flex justify-center items-start sm:items-center sm:min-h-screen sm:p-4 overflow-hidden">
+      {/* Mobile Frame Container (border removed, clean full mobile viewport) */}
+      <div className="w-full max-w-md h-full sm:h-[844px] sm:max-h-[896px] sm:rounded-[44px] bg-black shadow-2xl relative overflow-hidden flex flex-col">
         
         {/* Invisible YouTube Audio Engine (Zero Video) */}
         <HiddenPlayer />
@@ -72,15 +87,19 @@ function MainApp() {
             </>
           )}
 
-          {activeTab === 'search' && <SearchView />}
+          {activeTab === 'search' && (
+            <SearchView onFocusChange={setIsSearchFocused} />
+          )}
           {activeTab === 'library' && <LibraryView />}
         </main>
 
-        {/* Floating Mini Player (Expands to Now Playing on click) */}
-        <MiniPlayer />
+        {/* Floating Mini Player (Hidden when keyboard/search active) */}
+        {!shouldHideFloatingBars && <MiniPlayer />}
 
-        {/* Floating Bottom Dock Navigation (Home, Search, Library) */}
-        <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />
+        {/* Floating Bottom Dock Navigation (Hidden when keyboard/search active) */}
+        {!shouldHideFloatingBars && (
+          <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />
+        )}
 
         {/* Full-Screen Now Playing View */}
         <NowPlaying
